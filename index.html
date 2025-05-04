@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Game Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <!-- Leaflet CSS & JS (MUST be loaded first) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet.AwesomeMarkers CSS & JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.js"></script>
+
+    <!-- Font Awesome (required for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; }
+        .wheel-marker { animation: spin 2s linear infinite; }
+        .wand-marker { animation: pulse 1s infinite; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <h2>Map Locations</h2>
+            <input type="text" id="search" placeholder="Search locations...">
+            
+            <div class="marker-category">
+                <h3>Quests</h3>
+                <div id="quests-list"></div>
+            </div>
+            
+            <div class="marker-category">
+                <h3>Collectibles</h3>
+                <div id="collectibles-list"></div>
+            </div>
+            
+            <div class="marker-category">
+                <h3>Resources</h3>
+                <div id="resources-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Custom Icons -->
+    <script src="https://unpkg.com/leaflet.awesome-markers@2.0.2/dist/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.awesome-markers@2.0.2/dist/leaflet.awesome-markers.css" />
+    
+    <script>
+        // Initialize the map
+        // Initialize map with simple coordinate system
+        const locationsDB = {
+            // Format: "Location Name": { x: [horizontal pixel], y: [vertical pixel] }
+            "Pink Fruit Left of Hub Left": { x: 0, y: 0 },
+            "Pink Fruit Left of Hub Right": { x: 0, y: 0 },
+            "Pink Fruit above Egg Room": { x: 0, y: 0 },
+            "Pink Fruit by First Mouse Head Hitting Lever": { x: 0, y: 0 },
+            "Stamp Chest": { x: 0, y: 0 },
+            "Pencil Chest": { x: 0, y: 0 },
+            "Top Chest": {x: 13177, y: 6899},
+            "65th Egg Chest": { x: 0, y: 0 },
+            "Office Key Chest": { x: 0, y: 0 },
+            "Virtual Egg Chest": { x: 0, y: 0 },
+            "Holiday Egg Chest": { x: 0, y: 0 },
+            "Rain Egg Chest": { x: 0, y: 0 },
+            "Activate Bird Fast Travel": { x: 0, y: 0 },
+            "Animal Flute Chest": {x: 10152, y: 6797},
+            "Pink Fruit by Flute Chest": { x: 0, y: 0 },
+            "Sweet Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Mural Bunny": { x: 0, y: 0 },
+            "Pink Fruit by Planet Egg Chest Left": { x: 0, y: 0 },
+            "Pink Fruit by Planet Egg Chest Right": { x: 0, y: 0 },
+            "Match under Mouse Statue": { x: 0, y: 0 },
+            "Planet Egg Chest": { x: 0, y: 0 },
+            "Match Above Egg Room": { x: 0, y: 0 },
+            "Clover Egg Chest": { x: 0, y: 0 },
+            "Match in Tutorial Chest": { x: 0, y: 0 },
+            "Squirrel First Candle": { x: 0, y: 0 },
+            "Gorgeous Egg Chest": { x: 0, y: 0 },
+            "Map Chest": { x: 0, y: 0 },
+            "Remote Chest": { x: 0, y: 0 },
+            "Iridescent Egg Chest": { x: 0, y: 0 },
+            "Ice Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit above Remote Chest": { x: 0, y: 0 },
+            "Pink Fruit by Breakout Game Right": { x: 0, y: 0 },
+            "Blue Fruit by Breakout Game Left": { x: 0, y: 0 },
+            "Neon Egg Chest": { x: 0, y: 0 },
+            "E. Medal Chest": { x: 0, y: 0 },
+            "Match in Fish Mural Room Chest": { x: 0, y: 0 },
+            "Pink Fruit by Fireball Thrower": { x: 0, y: 0 },
+            "Mystic Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in Bottom Right of Fish Bubble Column": { x: 0, y: 0 },
+            "Great Egg Chest": { x: 0, y: 0 },
+            "Big Blue Fruit after Cranes": { x: 0, y: 0 },
+            "Pink Fruit in Bottom Left of Fish Bubble Column": { x: 0, y: 0 },
+            "Normal Egg Chest": { x: 0, y: 0 },
+            "Dazzle Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in Fish Upper Phone Room Bottom": { x: 0, y: 0 },
+            "Pink Fruit in Fish Upper Phone Room Top": { x: 0, y: 0 },
+            "Pink Fruit below Fish Upper Phone Room Top": { x: 0, y: 0 },
+            "Sunset Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit below Fish Upper Phone Room Bottom": { x: 0, y: 0 },
+            "Pink Fruit before First Seahorse Fight": { x: 0, y: 0 },
+            "Blue Fruit by B. Wand Chest": { x: 0, y: 0 },
+            "B. Wand Chest": { x: 2857, y: 10615 },
+            "Pink Fruit by Ancient Egg Chest Left": { x: 0, y: 0 },
+            "Pink Fruit above Fish Fast Travel": { x: 0, y: 0 },
+            "Ancient Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit by Ancient Egg Chest Right": { x: 0, y: 0 },
+            "Activate Fish Fast Travel": { x: 0, y: 0 },
+            "Pink Fruit by Fish Fast Travel": { x: 0, y: 0 },
+            "Galaxy Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in Fish Pipe Maze Left": { x: 0, y: 0 },
+            "Blue Fruit in Fish Pipe Maze Right": { x: 0, y: 0 },
+            "Pink Fruit in Fish Pipe Maze Middle": { x: 0, y: 0 },
+            "Friendship Egg Chest": { x: 0, y: 0 },
+            "Magic Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Fish Lower Phone Room": { x: 0, y: 0 },
+            "Pink Fruit by Penguin Candle Top": { x: 0, y: 0 },
+            "Blue Fruit by Penguin Candle Bottom": { x: 0, y: 0 },
+            "Fish Candle in Penguin Room": { x: 0, y: 0 },
+            "Goodnight Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit in Whale Fight": { x: 0, y: 0 },
+            "Brick Egg Chest": { x: 0, y: 0 },
+            "Scarlet Egg Chest": { x: 0, y: 0 },
+            "B. Flame": { x: 0, y: 0 },
+            "Pink Fruit by Water Spike Bunny": { x: 0, y: 0 },
+            "Pink Fruit in Bonefish Abyss": { x: 0, y: 0 },
+            "Activate Bone Fish Fast Travel": { x: 0, y: 0 },
+            "Pink Fruit left of Lower Bear Key Room": { x: 0, y: 0 },
+            "Pink Fruit by Lower Bear Key Chest": { x: 0, y: 0 },
+            "Key Chest in Lower Bear": { x: 0, y: 0 },
+            "Blue Fruit in Capybara Room Top Left": { x: 0, y: 0 },
+            "Blue Fruit in Capybara Room Top Right": { x: 0, y: 0 },
+            "Pink Fruit in Capybara Room Bottom Right": { x: 0, y: 0 },
+            "Pink Fruit in Capybara Room Bottom Left": { x: 0, y: 0 },
+            "Key Chest in Upper Bear": { x: 0, y: 0 },
+            "Pink Fruit below Capybara Room": { x: 0, y: 0 },
+            "Zen Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit by Universal Basic Egg Chest": { x: 0, y: 0 },
+            "Universal Basic Egg Chest": { x: 0, y: 0 },
+            "Value Egg Chest": { x: 0, y: 0 },
+            "Future Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in Chinchilla Vines Room": { x: 0, y: 0 },
+            "Bear Candle in Dark Maze": { x: 0, y: 0 },
+            "Blue Fruit in Bear Dark Maze Right": { x: 0, y: 0 },
+            "Pink Fruit in Bear Dark Maze Left": { x: 0, y: 0 },
+            "Laissez-faire Egg Chest": { x: 0, y: 0 },
+            "S. Medal Chest": { x: 0, y: 0 },
+            "Blue Fruit after First Chameleon Fight": { x: 0, y: 0 },
+            "Slink Chest": {x: 22009, y: 4540},
+            "Transcendental Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Bear Kangaroo Waterfall": { x: 0, y: 0 },
+            "Blue Fruit above Bear Kangaroo Waterfall": { x: 0, y: 0 },
+            "Pink Fruit before Bear Middle Phone Room": { x: 0, y: 0 },
+            "Post Modern Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit before Truth Egg": { x: 0, y: 0 },
+            "Truth Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in Bear Middle Phone Room": { x: 0, y: 0 },
+            "Activate Bear Fast Travel": { x: 0, y: 0 },
+            "Chaos Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Monkey": { x: 0, y: 0 },
+            "Shadow Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Statue Bunny": { x: 0, y: 0 },
+            "Match in Bear Area": { x: 0, y: 0 },
+            "Pink Fruit in Bear Upper Phone Room Left": { x: 0, y: 0 },
+            "Pink Fruit in Bear Upper Phone Room Right": { x: 0, y: 0 },
+            "Swan Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit right of Otters": { x: 0, y: 0 },
+            "Defeated Chameleon": { x: 0, y: 0 },
+            "Pink Fruit in Second Chameleon Fight": { x: 0, y: 0 },
+            "V. Flame": { x: 0, y: 0 },
+            "Blue Fruit by V. Flame": { x: 0, y: 0 },
+            "Blue Fruit behind Entry Chameleon": { x: 0, y: 0 },
+            "Razzle Egg Chest": { x: 0, y: 0 },
+            "Wolf Disc Shrine": {x: 12504, y: 6142},
+            "Pink Fruit in Mock Disc Phone Room": { x: 0, y: 0 },
+            "Dog Dark Room Candle": { x: 0, y: 0 },
+            "Pink Fruit in Dog Dark Room": { x: 0, y: 0 },
+            "Pink Fruit right of Chinchilla Skull Room": { x: 0, y: 0 },
+            "Pink Fruit before Mock Disc Chest": { x: 0, y: 0 },
+            "Orange Egg Chest": { x: 0, y: 0 },
+            "Upside Down Egg Chest": { x: 0, y: 0 },
+            "Mock Disc Chest": { x: 0, y: 0 },
+            "Sour Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit after Dachshund Tunnels": { x: 0, y: 0 },
+            "Red Egg Chest": { x: 0, y: 0 },
+            "Evil Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Turtle Pool": { x: 0, y: 0 },
+            "Dog Boxed Candle": { x: 0, y: 0 },
+            "Pink Fruit by Barcode Bunny": { x: 0, y: 0 },
+            "Activate Dog Fast Travel": { x: 0, y: 0 },
+            "Pink Fruit by Dog Fast Travel": { x: 0, y: 0 },
+            "Pink Fruit by Swordfish Lake": { x: 0, y: 0 },
+            "Pink Fruit below Raw Egg Puzzle Entrance": { x: 0, y: 0 },
+            "Pink Fruit left of Mock Disc Shrine": { x: 0, y: 0 },
+            "Blue Fruit by Raw Egg Puzzle Entrance": { x: 0, y: 0 },
+            "Raw Egg Chest": { x: 0, y: 0 },
+            "P. Flame": { x: 0, y: 0 },
+            "Blue Fruit by P. Flame": { x: 0, y: 0 },
+            "Blue Fruit above Dog Fast Travel": { x: 0, y: 0 },
+            "Brown Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Brown Egg Chest": { x: 0, y: 0 },
+            "Reference Egg Chest": { x: 0, y: 0 },
+            "Crystal Egg Chest": { x: 0, y: 0 },
+            "Forbidden Egg Chest": { x: 0, y: 0 },
+            "Big Blue Fruit before Disc Spike Bunny": { x: 0, y: 0 },
+            "Big Blue Fruit after Disc Spike Bunny": { x: 0, y: 0 },
+            "Plant Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit above Plant Egg Chest": { x: 0, y: 0 },
+            "Dog Candle in Many Switches Room": { x: 0, y: 0 },
+            "Pink Fruit in Bat Room": { x: 0, y: 0 },
+            "Dog Candle in Bat Room": { x: 0, y: 0 },
+            "Key Chest in Dog with Chinchilla Crank": { x: 0, y: 0 },
+            "Switch next to Bat Room": { x: 0, y: 0 },
+            "Egg As A Service Chest": { x: 0, y: 0 },
+            "B. Ball Chest": { x: 0, y: 0 },
+            "Blue Fruit in Kangaroo Room Hand": { x: 0, y: 0 },
+            "Blue Fruit in Kangaroo Room Tail": { x: 0, y: 0 },
+            "Pink Fruit in Kangaroo Room Foot": { x: 0, y: 0 },
+            "Vanity Egg Chest": { x: 0, y: 0 },
+            "Match in Switch-Bounce Room Chest": { x: 0, y: 0 },
+            "Blue Fruit in Dog Switch Maze": { x: 0, y: 0 },
+            "Dog Candle in Disc Switch Maze": { x: 0, y: 0 },
+            "Depraved Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit right of Dog Switch Maze Left": { x: 0, y: 0 },
+            "Pink Fruit right of Dog Switch Maze Right": { x: 0, y: 0 },
+            "Match by Dog Fish Pipe Chest": { x: 0, y: 0 },
+            "Switch for Post Modern Egg": { x: 0, y: 0 },
+            "Pink Fruit in Bottom of Dog Elevator": { x: 0, y: 0 },
+            "Blue Fruit by Dog Wheel": { x: 0, y: 0 },
+            "Can Flip Dog Wheel": { x: 0, y: 0 },
+            "Big Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit in Top of Dog Elevator": { x: 0, y: 0 },
+            "Pink Fruit in Dog Elevator near P. Flame Right": { x: 0, y: 0 },
+            "Pink Fruit in Dog Elevator near P. Flame Left": { x: 0, y: 0 },
+            "Pink Fruit by Groundhog": { x: 0, y: 0 },
+            "Frog Candle Switch Carousel": { x: 0, y: 0 },
+            "Pink Fruit by Frog Switch Carousel Top": { x: 0, y: 0 },
+            "Moon Egg Chest": { x: 0, y: 0 },
+            "Promise Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Frog Switch Carousel Bottom": { x: 0, y: 0 },
+            "Blue Fruit behind Groundhog": { x: 0, y: 0 },
+            "Travel Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit by Bubble Egg Chest": { x: 0, y: 0 },
+            "Bubble Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit above First Ostrich Fight": { x: 0, y: 0 },
+            "Key Chest by Mouse Head Hitting Lever": { x: 0, y: 0 },
+            "Dream Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in First Ostrich Fight": { x: 0, y: 0 },
+            "Blue Fruit after First Ostrich Fight": { x: 0, y: 0 },
+            "Fire Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit in Frog Worm Shaft Bottom": { x: 0, y: 0 },
+            "Yoyo Chest": {x: 24167, y: 15532},
+            "Sapphire Egg Chest": { x: 0, y: 0 },
+            "Activate Frog Fast Travel": { x: 0, y: 0 },
+            "Pink Fruit in Frog Between Guard Rooms Bottom": { x: 0, y: 0 },
+            "Pink Fruit in Frog Between Guard Rooms Top": { x: 0, y: 0 },
+            "Key Chest in West Frog Guard Room": { x: 0, y: 0 },
+            "Match in Guard Room Chest": { x: 0, y: 0 },
+            "Pink Fruit in Frog East Guard Room": { x: 0, y: 0 },
+            "Key Chest in East Frog Guard Room": { x: 0, y: 0 },
+            "Pink Fruit by Groveling Toad": { x: 0, y: 0 },
+            "Rust Egg Chest": { x: 0, y: 0 },
+            "Jade Egg Chest": { x: 0, y: 0 },
+            "Ruby Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit above Frog Kangaroo Encounter Left": { x: 0, y: 0 },
+            "Pink Fruit above Frog Kangaroo Encounter Right": { x: 0, y: 0 },
+            "Desert Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Rat Elevators": { x: 0, y: 0 },
+            "Obsidian Egg Chest": { x: 0, y: 0 },
+            "Pink Fruit by Caged Cats": { x: 0, y: 0 },
+            "Pink Fruit right of Second Ostrich Fight": { x: 0, y: 0 },
+            "Golden Egg Chest": { x: 0, y: 0 },
+            "Blue Fruit by G. Flame Bottom": { x: 0, y: 0 },
+            "Pink Fruit by G. Flame Top": { x: 0, y: 0 },
+            "G. Flame": { x: 0, y: 0 },
+            "Wheel Chest": { x: 985, y: 12386 },
+            "Pink Fruit by Lantern Chest": { x: 0, y: 0 },
+            "Blue Fruit in Miasma Above Lantern Chest": { x: 0, y: 0 },
+            "Activate Hippo Fast Travel": { x: 0, y: 0 },
+            "Lantern Chest": {x: 17639, y: 11645},
+            "Pink Fruit in Manticore Room Left": { x: 0, y: 0 },
+            "Pink Fruit in Manticore Room Right": { x: 0, y: 0 },
+            "Big Blue Fruit behind Manticore Wheel": { x: 0, y: 0 },
+            "B.B. Wand Chest": { x: 0, y: 0 },
+            "First Victory": { x: 0, y: 0 },
+            "Blue Fruit by Fireworks": { x: 0, y: 0 },
+            "House Key Drop": { x: 0, y: 0 },
+            "Fanny Pack Chest": { x: 0, y: 0 },
+            "Pickled Egg Chest": { x: 0, y: 0 },
+            "Chocolate Egg Chest": { x: 0, y: 0 },
+            "Match in Center Well Chest": { x: 0, y: 0 },
+            "UV Lantern Chest": {x: 361, y: 16665},
+            "Upgraded to B.B. Wand": { x: 0, y: 0 }
+        };
+
+        const map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: -4,
+            maxZoom: 2,
+            zoomSnap: 0.1,
+            preferCanvas: true
+        });
+
+        // Your image dimensions
+        const MAP_WIDTH = 30720;
+        const MAP_HEIGHT = 17280;
+        
+        // Chunk dimensions
+        const CHUNK_WIDTH = 1920;
+        const CHUNK_HEIGHT = 1080;
+        
+        // Calculate bounds
+        const southWest = map.unproject([0, MAP_HEIGHT], 0);
+        const northEast = map.unproject([MAP_WIDTH, 0], 0);
+        const bounds = new L.LatLngBounds(southWest, northEast);
+        
+        // Add all chunks to the map
+        const cols = Math.ceil(MAP_WIDTH / CHUNK_WIDTH);
+        const rows = Math.ceil(MAP_HEIGHT / CHUNK_HEIGHT);
+        
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * CHUNK_WIDTH;
+                const y = row * CHUNK_HEIGHT;
+                
+                const chunkBounds = new L.LatLngBounds(
+                    map.unproject([x, y + CHUNK_HEIGHT], 0),
+                    map.unproject([x + CHUNK_WIDTH, y], 0)
+                );
+                
+                L.imageOverlay(`map_chunks/chunk_${row}_${col}.png`, chunkBounds, {
+                    interactive: false
+                }).addTo(map);
+            }
+        }
+        
+        map.fitBounds(bounds);
+        // Add this click handler to your map
+        map.on('click', function(e) {
+            // Get the projected pixel coordinates
+            const pixelCoords = map.project(e.latlng, 0);
+            
+            // Format as {x: x_val, y: y_val}
+            const coordString = `{x: ${Math.round(pixelCoords.x)}, y: ${Math.round(pixelCoords.y)}}`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(coordString)
+                .then(() => {
+                    // Visual feedback
+                    const tempPopup = L.popup()
+                        .setLatLng(e.latlng)
+                        .setContent(`Copied!<br>${coordString}`)
+                        .openOn(map);
+                    
+                    // Auto-close after 1 second
+                    setTimeout(() => map.closePopup(tempPopup), 1000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    // Fallback for older browsers
+                    prompt('Copy these coordinates:', coordString);
+                });
+        });
+        
+        const items = {
+            "Wheel": {
+                icon: "assets/icons/Wheel.png" 
+            },
+            "B. Wand": {
+                icon: "assets/icons/B_wand.png" 
+            },
+            "Yoyo": {
+                icon: "assets/icons/Yoyo.png" 
+            },
+            "Slink": {
+                icon: "assets/icons/Slink.png" 
+            },
+            "Lantern": {
+                icon: "assets/icons/Lantern.png" 
+            },
+            "Flute": {
+                icon: "assets/icons/Flute.png" 
+            },
+            "Disc": {
+                icon: "assets/icons/Disc.png" 
+            },
+            "B. Ball": {
+                icon: "assets/icons/B_Ball.png" 
+            },
+            "Top": {
+                icon: "assets/icons/Top.png" 
+            },
+            "UV Lantern": {
+                icon: "assets/icons/UV_Lantern.png" 
+            },
+
+            // Add other items here:
+            // "Flame": {icon: "..."},
+            // "Pink Fruit": {icon: "..."},
+        };
+        function createCenteredIcon(iconUrl, size = [32, 32]) {
+            return L.icon({
+                iconUrl: iconUrl || 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+                iconSize: size,
+                iconAnchor: [size[0]/2, size[1]/2],  // Center the icon
+                popupAnchor: [0, -size[1]/2]         // Position popup above
+            });
+        }
+        // Assuming locationsDB is an object where keys are location names
+        // and values are {x, y} coordinates like:
+        // {"Upgraded to B.B. Wand": { x: 0, y: 0 }}
+        Object.entries(locationsDB).forEach(([locationName, locationData]) => {
+            // Find which item this location contains
+            const foundItem = Object.keys(items).find(item => 
+                locationName.includes(item)
+            );
+            
+            if (foundItem) {
+                const icon = createCenteredIcon(items[foundItem].icon, [32, 32]);
+                
+                const marker = L.marker(
+                    map.unproject([locationData.x, locationData.y], 0),
+                    { 
+                        icon: icon,
+                        riseOnHover: true
+                    }
+                );
+                
+                // Tooltip on hover
+                marker.bindTooltip(`
+                    <strong>${locationName}</strong><br>
+                    <em>Contains:</em> ${foundItem}
+                `, {
+                    permanent: false,
+                    direction: 'top',
+                    className: 'marker-tooltip'
+                });
+                
+                // Popup on click
+                marker.bindPopup(`
+                    <h3>${locationName}</h3>
+                    <p>Contains: <strong>${foundItem}</strong></p>
+                `);
+                
+                marker.addTo(map);
+            }
+        });
+        
+    </script>
+</body>
+</html>
