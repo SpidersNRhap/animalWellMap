@@ -31,21 +31,23 @@
             margin: 0; 
             padding: 0; 
             overflow: hidden;
-            background-color: #1e1e1e;
+            background-color: #000000;
             color: #e0e0e0;
             font-size: 16px;
         }
         
         #map { 
             height: 100vh; 
-            width: calc(100vw - var(--sidebar-width));
+            width: 100vw;
             position: absolute;
             transition: left 0.3s ease, width 0.3s ease;
             left: var(--sidebar-width);
             top: 0;
             background: #1e1e1e;
         }
-        
+        #sidebar.collapsed ~ #map {
+            left: var(--sidebar-collapsed-width); /* Full width when collapsed */
+        }
         #sidebar {
             position: fixed;
             left: 0;
@@ -648,8 +650,8 @@
         }
         
         // Set initial map view and bounds
-        map.fitBounds(bounds);
-        map.setMaxBounds(bounds2);
+        map.fitBounds(bounds.pad(0.1));
+        map.setMaxBounds(bounds2.pad(0.1));
         document.addEventListener('DOMContentLoaded', function() {
             // Map configuration constants
             
@@ -670,37 +672,7 @@
        
 
         // Optional: Close popups when dragging starts
-        map.on('dragstart', function() {
-        map.closePopup();
-        });
-        // Add this click handler to your map
-        if(debug) {
-            map.on('click', function(e) {
-                // Get the projected pixel coordinates
-                const pixelCoords = map.project(e.latlng, 0);
-                
-                // Format as {x: x_val, y: y_val}
-                const coordString = `{x: ${Math.round(pixelCoords.x)}, y: ${Math.round(pixelCoords.y)}}`;
-                
-                // Copy to clipboard
-                navigator.clipboard.writeText(coordString)
-                    .then(() => {
-                        // Visual feedback
-                        const tempPopup = L.popup()
-                            .setLatLng(e.latlng)
-                            .setContent(`Copied!<br>${coordString}`)
-                            .openOn(map);
-                        
-                        // Auto-close after 1 second
-                        setTimeout(() => map.closePopup(tempPopup), 1000);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy: ', err);
-                        // Fallback for older browsers
-                        prompt('Copy these coordinates:', coordString);
-                    });
-            });
-        }
+       
         
         const items = {
             "Pencil": {
