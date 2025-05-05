@@ -305,8 +305,8 @@
                     <label for="toggle-equipment">Equipment</label>
                 </div>
                 <div class="form-group">
-                    <input type="checkbox" id="toggle-fruit" checked>
-                    <label for="toggle-fruit">Fruit</label>
+                    <input type="checkbox" id="toggle-fruits" checked>
+                    <label for="toggle-fruits">Fruits</label>
                 </div>
                 <div class="form-group">
                     <input type="checkbox" id="toggle-bunnies" checked>
@@ -880,14 +880,37 @@
         const eggMarkers = L.layerGroup();
         const otherMarkers = L.layerGroup();
         function updateMarkerCounts() {
-            Object.entries(layerGroups).forEach(([groupName, {group, items}]) => {
-              const count = group.getLayers().length;
-              const label = document.querySelector(`label[for="toggle-${groupName}"]`);
-              if (label) {
-                label.innerHTML = `${groupName.charAt(0).toUpperCase() + groupName.slice(1)} <span class="marker-count">(${count})</span>`;
-              }
+            //console.log('Updating marker counts...'); // Debug log
+            
+            if (!layerGroups) {
+                console.error('layerGroups is not defined');
+                return;
+            }
+        
+            Object.entries(layerGroups).forEach(([groupName, groupData]) => {
+                try {
+                    if (!groupData || !groupData.group) {
+                        console.warn(`No group data for ${groupName}`);
+                        return;
+                    }
+        
+                    const layers = groupData.group.getLayers();
+                    const count = layers ? layers.length : 0;
+                    //console.log(`Group ${groupName} has ${count} markers`); // Debug log
+        
+                    const label = document.querySelector(`label[for="toggle-${groupName}"]`);
+                    if (!label) {
+                        console.warn(`Label for toggle-${groupName} not found`);
+                        return;
+                    }
+        
+                    const capitalized = groupName.charAt(0).toUpperCase() + groupName.slice(1);
+                    label.innerHTML = `${capitalized} <span class="marker-count">(${count})</span>`;
+                } catch (error) {
+                    console.error(`Error processing ${groupName}:`, error);
+                }
             });
-          }
+        }
         //let allMarkers = [];
         const allMarkers = L.layerGroup([bunnyMarkers, fruitMarkers, equipmentMarkers, eggMarkers, otherMarkers]);
         const layerGroups = {
@@ -1094,7 +1117,7 @@
             e.target.checked ? layerGroups.bunnies.group.addTo(map) : layerGroups.bunnies.group.remove();
           });
           
-        document.getElementById('toggle-fruit').addEventListener('change', function(e) {
+        document.getElementById('toggle-fruits').addEventListener('change', function(e) {
         e.target.checked ? layerGroups.fruits.group.addTo(map) : layerGroups.fruits.group.remove();
         });
         
@@ -1163,9 +1186,11 @@
                         if (!trimmedLine) continue;
                         
                         const match = trimmedLine.split(":");
-                        console.log(match);
+                        if (match[0].endsWith("Event")) continue;
+                
                         if (match) {
                             const location = match[0].split(" - ")[0].trim();
+                            
                             const itemName = match[1].trim();
                             
                             itemLocationMap[location] = {
@@ -1250,7 +1275,7 @@
                     // Add marker to the appropriate group
                     marker.addTo(layerGroups[groupKey].group);
                     updateMarkerCounts();
-                    
+                    if (debug) validateEggs();
                     // Optional: Add to some global markers array if needed
                     // window.itemMarkers = window.itemMarkers || [];
                     // window.itemMarkers.push(marker);
@@ -1451,8 +1476,22 @@
     } else {
         setupSearch();
     }
- 
- 
+    function validateEggs(){
+        let eggs = [...layerGroups.eggs.items];
+        console.log(eggs);
+        for (const [locationName, locData] of Object.entries(itemLocationMap)) {
+                const item = locData.item;
+                if (eggs.includes(item)) {
+                    const index = eggs.indexOf(item);
+                    if (index > -1) { // only splice array when item is found
+                        eggs.splice(index, 1); // 2nd parameter means remove one item only
+                    }
+
+                }
+            }
+        console.log(eggs);
+    }
+    
     </script>
 </body>
 </html>
