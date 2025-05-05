@@ -940,23 +940,23 @@
             eggs: {
               group: L.layerGroup(),
               items: [
-              "65th Egg", "Ancient Egg", "Big Egg", "Brick Egg",
+              "65th Egg", "Ancient Egg", "Big Egg", "Brick Egg",//4
               "Brown Egg", "Bubble Egg", "Chaos Egg", "Chocolate Egg",
               "Clover Egg", "Crystal Egg", "Dazzle Egg", "Depraved Egg",
-              "Desert Egg", "Dream Egg", "Egg As A Service", "Evil Egg",
+              "Desert Egg", "Dream Egg", "Egg As A Service", "Evil Egg",//16
               "Fire Egg", "Forbidden Egg", "Friendship Egg", "Future Egg",
-              "Galaxy Egg", "Golden Egg", "Goodnight Egg", "Gorgeous Egg",
+              "Galaxy Egg", "Golden Egg", "Goodnight Egg", "Gorgeous Egg",//24
               "Great Egg", "Holiday Egg", "Ice Egg", "Iridescent Egg",
-              "Jade Egg", "Laissez-faire Egg", "Magic Egg", "Moon Egg",
+              "Jade Egg", "Laissez-faire Egg", "Magic Egg", "Moon Egg",//32
               "Mystic Egg", "Neon Egg", "Normal Egg", "Obsidian Egg",
-              "Orange Egg", "Pickled Egg", "Planet Egg", "Plant Egg",
-              "Post Modern Egg", "Promise Egg", "Rain Egg",
-              "Raw Egg", "Razzle Egg", "Red Egg", "Reference Egg",
+              "Orange Egg", "Pickled Egg", "Planet Egg", "Plant Egg",//40
+              "Post Modern Egg", "Promise Egg", "Rain Egg",//43
+              "Raw Egg", "Razzle Egg", "Red Egg", "Reference Egg",//47
               "Ruby Egg", "Rust Egg", "Sapphire Egg", "Scarlet Egg",
-              "Shadow Egg", "Sour Egg", "Sunset Egg", "Swan Egg",
+              "Shadow Egg", "Sour Egg", "Sunset Egg", "Swan Egg",//55
               "Sweet Egg", "Transcendental Egg", "Travel Egg",
               "Truth Egg", "Universal Basic Egg", "Upside Down Egg",
-              "Value Egg", "Vanity Egg", "Virtual Egg", "Zen Egg"
+              "Value Egg", "Vanity Egg", "Virtual Egg", "Zen Egg"//65
                 ]
             },
             other: {
@@ -1045,8 +1045,11 @@
                     locationName.toLowerCase().includes("candle")
                 );
                 if (containsMatch) return "Candle";
-                if (locationName.toLowerCase().includes("")) {
+                if (locationName.toLowerCase().includes("service")) {
                     return "Egg As A Service";
+                }
+                if (locationName.toLowerCase().includes("wolf disc")) {
+                    return "Disc";
                 }
                 return null;
                 // Final fallback - try to match partial words
@@ -1102,6 +1105,7 @@
                 // Add marker to the appropriate group
                 marker.addTo(layerGroups[groupKey].group);
                 updateMarkerCounts();
+                if (debug) validateEggs();
             }
         }); 
         
@@ -1187,12 +1191,15 @@
                         
                         const match = trimmedLine.split(":");
                         if (match[0].endsWith("Event")) continue;
-                
+                        
                         if (match) {
                             const location = match[0].split(" - ")[0].trim();
                             
                             const itemName = match[1].trim();
-                            
+                            if (!(location in locationsDB)) {
+                                console.warn(`Location "${location}" not found in locationsDB!`);
+                                continue;
+                            }
                             itemLocationMap[location] = {
                                 item: itemName,
                                 coords: locationsDB[location] || { x: 0, y: 0 },
@@ -1229,6 +1236,8 @@
                 const locationName = location;
                 const locationCoords = locData.coords;
                 const itemName = locData.item;
+                
+                    
                // console.log(`Item: ${itemName}, Location: ${locationName}, Coordinates: ${JSON.stringify(locationCoords)}`);
                 // Only proceed if we have coordinates for this location
                 if (locationCoords && locationCoords.x && locationCoords.y) {
@@ -1486,7 +1495,10 @@
                     if (index > -1) { // only splice array when item is found
                         eggs.splice(index, 1); // 2nd parameter means remove one item only
                     }
-
+                }else if (layerGroups.eggs.items.includes(item)) {
+                    eggs.push(item);
+                } else {
+                    console.log(`Item ${item} not found in eggs`);
                 }
             }
         console.log(eggs);
