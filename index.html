@@ -1148,6 +1148,7 @@
                 if (!file) return;
                 
                 try {
+                    itemLocationMap = {};
                     resultsDiv.style.display = 'block';
                     resultsDiv.textContent = 'Loading file...';
                     const content = await file.text();
