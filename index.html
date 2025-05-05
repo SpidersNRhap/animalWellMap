@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Game Map</title>
+    <title>Animal Well Map</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Leaflet CSS -->
-    <!-- Leaflet CSS & JS (MUST be loaded first) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -14,34 +13,94 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.min.js"></script>
 
-    <!-- Font Awesome (required for icons) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100vw; }
+        :root {
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 0px;
+            --sidebar-padding: 20px;
+            --toggle-btn-size: 30px;
+            --toggle-btn-offset: 30px;
+            --zoom-control-size: 40px;
+            --search-results-max-height: 300px;
+        }
+        
+        body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+        
+        #map { 
+            height: 100vh; 
+            width: calc(100vw - var(--sidebar-width));
+            position: absolute;
+            transition: left 0.3s ease, width 0.3s ease;
+            left: var(--sidebar-width);
+            top: 0;
+            background: #1e1e1e;
+        }
+        
         #sidebar {
             position: fixed;
             left: 0;
             top: 0;
-            width: 300px;
+            width: var(--sidebar-width);
             height: 100vh;
-            background: white;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            background: #2d2d2d;
+            padding: var(--sidebar-padding);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
             z-index: 1000;
             overflow-y: auto;
+            transition: transform 0.3s ease;
+            color: #e0e0e0;
         }
+        
+        #sidebar.collapsed {
+            transform: translateX(calc(-1 * var(--sidebar-width)));
+        }
+        
+        .toggle-btn {
+            position: fixed;
+            left: calc(var(--sidebar-width) + var(--toggle-btn-offset));
+            top: 50%;
+            transform: translateY(-50%);
+            width: var(--toggle-btn-size);
+            height: var(--toggle-btn-size);
+            background: #3d3d3d;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 16px;
+            transition: left 0.3s ease;
+        }
+        
+        #sidebar.collapsed + .toggle-btn {
+            left: var(--toggle-btn-offset);
+        }
+        
         #resultsList {
             position: absolute;
             z-index: 1000;
-            background: white;
-            border: 1px solid #ccc;
-            max-height: 300px;
+            background: #3d3d3d;
+            border: 1px solid #555;
+            max-height: var(--search-results-max-height);
             overflow-y: auto;
             display: none;
-            width: 100%;
+            width: calc(100% - 2 * var(--sidebar-padding)));
             box-sizing: border-box;
+            color: #e0e0e0;
+            margin-top: 5px;
+            padding: 0;
+            list-style: none;
         }
         
         #resultsList li {
@@ -52,7 +111,7 @@
         }
         
         #resultsList li:hover {
-            background-color: #f0f0f0;
+            background-color: #4d4d4d;
         }
         
         .search-icon {
@@ -63,25 +122,169 @@
         
         .confirmed-item {
             font-weight: bold;
-            color: #006600;
+            color: #4CAF50;
+        }
+        
+        .leaflet-control-zoom {
+            position: fixed !important;
+            right: 20px !important;
+            bottom: 20px !important;
+            z-index: 1000 !important;
+            background: #3d3d3d;
+            border: 1px solid #555 !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: #3d3d3d;
+            color: #e0e0e0;
+            border-bottom: 1px solid #555 !important;
+            width: var(--zoom-control-size);
+            height: var(--zoom-control-size);
+            line-height: var(--zoom-control-size);
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: #4d4d4d;
+        }
+
+        /* Remove Leaflet's automatic positioning */
+        .leaflet-bottom.leaflet-right {
+            position: static !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Spoiler log parser styling */
+        #spoiler-log-parser {
+            margin: 20px 0; 
+            padding: 15px; 
+            background: #3d3d3d; 
+            border-radius: 5px; 
+            border: 1px solid #555;
+        }
+
+        #spoiler-log-parser h3 {
+            margin-top: 0; 
+            font-size: 1em;
+            color: #e0e0e0;
+        }
+
+        #spoiler-results {
+            font-family: monospace; 
+            white-space: pre; 
+            padding: 10px; 
+            background: #2d2d2d; 
+            border-radius: 4px; 
+            max-height: 200px; 
+            overflow: auto; 
+            font-size: 0.75em; 
+            border: 1px solid #555; 
+            margin-top: 10px; 
+            display: none;
+            color: #e0e0e0;
+        }
+
+        /* Form controls styling */
+        .layer-control {
+            background: #3d3d3d;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border: 1px solid #555;
+        }
+
+        .layer-control h4 {
+            margin-top: 0;
+            color: #e0e0e0;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #071bff;
+            margin-right: 8px;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 16px);
+            padding: 8px;
+            background: #3d3d3d;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #e0e0e0;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"]::placeholder {
+            color: #999;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            background: #3d3d3d;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 200px;
+                --sidebar-padding: 15px;
+                --toggle-btn-size: 25px;
+                --toggle-btn-offset: 15px;
+            }
+            
+            #sidebar {
+                font-size: 0.9em;
+            }
+            
+            .layer-control h4 {
+                font-size: 0.85em;
+            }
+            
+            .form-group {
+                font-size: 0.85em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            :root {
+                --sidebar-width: 180px;
+                --sidebar-padding: 10px;
+                --search-results-max-height: 200px;
+            }
+            
+            #sidebar {
+                font-size: 0.85em;
+            }
+            
+            #spoiler-log-parser {
+                padding: 10px;
+            }
+            
+            input[type="text"] {
+                padding: 6px;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Sidebar with toggle button -->
     <div id="sidebar">
-        
-        
-        <!-- Added Spoiler Log Parser Section -->
-        <div id="spoiler-log-parser" style="margin: 20px 0; padding: 15px; background: #f8f8f8; border-radius: 5px; border: 1px solid #ddd;">
-            <h3 style="margin-top: 0; font-size: 16px;">Spoiler Log Parser</h3>
-            
-            <label style="display: block; margin-bottom: 5px;">Upload Log File:</label>
-            <input type="file" id="spoiler-log-file" accept=".txt,.log" style="width: 100%; margin-bottom: 15px;">
-            
-          
-            <button id="fetch-log-btn" style="width: 100%; padding: 8px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Fetch Log</button>
-            
-            <div id="spoiler-results" style="font-family: monospace; white-space: pre; padding: 10px; background: #fff; border-radius: 4px; max-height: 200px; overflow: auto; font-size: 12px; border: 1px solid #ddd; margin-top: 10px; display: none;"></div>
+        <div id="spoiler-log-parser">
+            <h3>Spoiler Log Parser</h3>
+            <label>Upload Log File:</label>
+            <input type="file" id="spoiler-log-file" accept=".txt,.log">
+            <div id="spoiler-results"></div>
         </div>
 
         <h2>Item Search</h2>
@@ -89,47 +292,43 @@
         <ul id="resultsList"></ul>
         <h3>Map Layers</h3>
         <div class="layer-control">
-        <h4>Toggle Markers</h4>
-        <form id="marker-toggle-form">
-            <div class="form-group">
-            <input type="checkbox" id="toggle-eggs" checked>
-            <label for="toggle-eggs">Eggs</label>
-            </div>
-            <div class="form-group">
-            <input type="checkbox" id="toggle-equipment" checked>
-            <label for="toggle-equipment">Equipment</label>
-            </div>
-            <div class="form-group">
-            <input type="checkbox" id="toggle-fruit" checked>
-            <label for="toggle-fruit">Fruit</label>
-            </div>
-            <div class="form-group">
-            <input type="checkbox" id="toggle-bunnies" checked>
-            <label for="toggle-bunnies">Bunnies</label>
-            <div class="form-group">
-            <input type="checkbox" id="toggle-other" checked>
-            <label for="toggle-other">Other</label>
-            </div>
-        </form>
+            <h4>Toggle Markers</h4>
+            <form id="marker-toggle-form">
+                <div class="form-group">
+                    <input type="checkbox" id="toggle-eggs" checked>
+                    <label for="toggle-eggs">Eggs</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="toggle-equipment" checked>
+                    <label for="toggle-equipment">Equipment</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="toggle-fruit" checked>
+                    <label for="toggle-fruit">Fruit</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="toggle-bunnies" checked>
+                    <label for="toggle-bunnies">Bunnies</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="toggle-other" checked>
+                    <label for="toggle-other">Other</label>
+                </div>
+            </form>
         </div>
-        <!-- <h2>Map Locations</h2>
-        <input type="text" id="search" placeholder="Search locations..."> -->
     </div>
-</div>
-    
-    <div id="map-container">
-        <div id="map"></div>
-    </div>
+    <button id="sidebarToggle" class="toggle-btn">☰</button>
 
+    <!-- Map container -->
+    <div id="map"></div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Custom Icons -->
-    <script src="https://unpkg.com/leaflet.awesome-markers@2.0.2/dist/leaflet.awesome-markers.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.awesome-markers@2.0.2/dist/leaflet.awesome-markers.css" />
-    
     <script>
+         
+        
+        
+        // Sidebar toggle functionality
+        
+        
         // Initialize the map
         // Initialize map with simple coordinate system
         const locationsDB = {
@@ -302,17 +501,17 @@
             "Blue Fruit in Kangaroo Room Tail": {x: 169, y: 4232},
             "Pink Fruit in Kangaroo Room Foot": {x: 1510, y: 4228},
             "Vanity Egg Chest": {x: 319, y: 2285},
-            "Match in Switch": {x: 11832, y: 2961},
+            "Match in Switch-Bounce Room Chest": {x: 11832, y: 2961},
             "Blue Fruit in Dog Switch Maze": {x: 11833, y: 2383},
             "Dog Candle in Disc Switch Maze": {x: 13128, y: 2678},
             "Depraved Egg Chest": {x: 13135, y: 2957},
             "Pink Fruit right of Dog Switch Maze Left": {x: 13561, y: 2862},
             "Pink Fruit right of Dog Switch Maze Right": {x: 14181, y: 3056},
             "Match by Dog Fish Pipe Chest": {x: 16440, y: 3507},
-            <!-- "Switch for Post Modern Egg": {x: 17929, y: 5080}, -->
+            //"Switch for Post Modern Egg": {x: 17929, y: 5080}, 
             "Pink Fruit in Bottom of Dog Elevator": {x: 17880, y: 5770},
             "Blue Fruit by Dog Wheel": {x: 16346, y: 5262},
-            "Can Flip Dog Wheel": {x: 16971, y: 5273},
+          //  "Can Flip Dog Wheel": {x: 16971, y: 5273},
             "Big Egg Chest": {x: 17839, y: 702},
             "Blue Fruit in Top of Dog Elevator": {x: 17163, y: 323},
             "Pink Fruit in Dog Elevator near P. Flame Right": {x: 17831, y: 1937},
@@ -377,15 +576,18 @@
             "UV Lantern Chest": {x: 361, y: 16665},
             //"Upgraded to B.B. Wand": {x: 7898, y: 15437}
         };
-        debug = false;
+        const debug = false;
         const MAP_WIDTH = 30720;
         const MAP_HEIGHT = 17280;
-
-        const mapBounds = L.latLngBounds(
-            L.latLng(MAP_HEIGHT, 0), // SW corner
-            L.latLng(0, MAP_WIDTH)    // NE corner
-        );
-
+        const CHUNK_WIDTH = 1920;
+        const CHUNK_HEIGHT = 1080;
+    
+        // Initialize sidebar and toggle button
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const mapElement = document.getElementById('map');
+    
+        // Initialize map with custom CRS
         const map = L.map('map', {
             crs: L.CRS.Simple,
             minZoom: -5,
@@ -393,23 +595,22 @@
             zoomSnap: 0.1,
             preferCanvas: true,
             maxBoundsViscosity: 1.0,
+            zoomControl: false // Disable default zoom control
         });
-
-        // Your image dimensions
-       
         
-        // Chunk dimensions
-        const CHUNK_WIDTH = 1920;
-        const CHUNK_HEIGHT = 1080;
+        // Add zoom control to bottom right
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Calculate bounds
+
+        // Set up map bounds
         const southWest = map.unproject([0, MAP_HEIGHT], 0);
         const northEast = map.unproject([MAP_WIDTH, 0], 0);
-        const southWest2 = map.unproject([0-5*1920, MAP_HEIGHT+3*1080], 0);
-        const northEast2 = map.unproject([MAP_WIDTH+1*1920, 0-3*1080], 0);
+        const southWest2 = map.unproject([0, MAP_HEIGHT], 0);
+        const northEast2 = map.unproject([MAP_WIDTH, 0], 0);
         const bounds = new L.LatLngBounds(southWest, northEast);
-
-        // Add all chunks to the map
+        const bounds2 = new L.LatLngBounds(southWest2, northEast2);
+    
+        // Add map chunks
         const cols = Math.ceil(MAP_WIDTH / CHUNK_WIDTH);
         const rows = Math.ceil(MAP_HEIGHT / CHUNK_HEIGHT);
         
@@ -429,10 +630,32 @@
             }
         }
         
+        // Set initial map view and bounds
         map.fitBounds(bounds);
-        const bounds2 = new L.LatLngBounds(southWest2, northEast2);
         map.setMaxBounds(bounds2);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Map configuration constants
+            
+        
+            // Sidebar toggle functionality
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                mapElement.classList.toggle('sidebar-collapsed');
+                
+                // Fix map rendering after transition
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 300);
+            });
+        });
+        // Add these right after your map initialization
+       // Store the last mouse position
+       
 
+        // Optional: Close popups when dragging starts
+        map.on('dragstart', function() {
+        map.closePopup();
+        });
         // Add this click handler to your map
         if(debug) {
             map.on('click', function(e) {
@@ -500,7 +723,7 @@
                 icon: "assets/icons/Top.png" 
             },
             "UV Lantern": {
-                icon: "assets/icons/UV_Lantern.png" 
+                icon: "assets/icons/UV Lantern.png" 
             },
             "Mock Disc": {
                 icon: "assets/icons/Mock Disc.png" 
@@ -573,6 +796,9 @@
             },
             "K. Shard": {
                 icon: "assets/icons/K Shard.png" 
+            },
+            "Office Key": {
+                icon: "assets/icons/Office Key.png" 
             },
             "Ancient Egg": {icon: "assets/icons/Ancient Egg.png"},
             "Big Egg": {icon: "assets/icons/Big Egg.png"},
@@ -710,7 +936,7 @@
           // Add all layer groups to map initially
           Object.values(layerGroups).forEach(({group}) => group.addTo(map));
         //const allItems = [bunnies, fruits, equipment, eggs, otherItems];
-
+        
         function createCenteredIcon(iconUrl, maxSize = 32) {
             // Default to a square if no size is specified
             const targetSize = Array.isArray(maxSize) ? maxSize : [maxSize, maxSize];
@@ -833,6 +1059,8 @@
                 updateMarkerCounts();
             }
         }); 
+        
+
         function updateAllCounts() {
             Object.entries(layerGroups).forEach(([name, {group, countElement}]) => {
               if (countElement) {
@@ -909,19 +1137,21 @@
                     const lines = locationsSection.split('\n');
                     
                     for (const line of lines) {
-                       // console.log(line);
                         const trimmedLine = line.trim();
                         if (!trimmedLine) continue;
                         
-                        const match = trimmedLine.match(/^([^\-]+)\s*\-[^:]+:\s*(.+)$/);
+                        const match = trimmedLine.split(":");
+                        console.log(match);
                         if (match) {
-                            const location = match[1].trim();
-                            const itemName = match[2].trim();
+                            const location = match[0].split(" - ")[0].trim();
+                            const itemName = match[1].trim();
                             
                             itemLocationMap[location] = {
                                 item: itemName,
                                 coords: locationsDB[location] || { x: 0, y: 0 },
-                                icon: items[itemName]?.icon || `assets/icons/${itemName.replace(/"/g, '')}.png`
+                                icon: itemName.includes("Candle") && items["Candle"]?.icon 
+                                    ? items["Candle"].icon 
+                                    : items[itemName]?.icon || `assets/icons/${itemName.replace(/"/g, '')}.png`
                             };
                         }
                     }
@@ -1051,7 +1281,7 @@
     // Initialize itemLocationMap if not exists
 
     // Search elements
-    const mapElement = document.getElementById('map');
+   // const mapElement = document.getElementById('map');
     // Improved search and click handling
     function setupSearch() {
         // Handle search input
@@ -1124,23 +1354,14 @@
                 
                 // Search through locations to find which one contains this item
                 for (const [locationName, locData] of Object.entries(itemLocationMap)) {
-                    if (!locData.items) {
+                    if (!locData.item) {
                         console.warn(`Location ${locationName} has no items array`);
                         continue;
                     }
         
                     // Check different possible item structures
-                    const foundItem = locData.items.find(item => {
-                        // Case 1: Item is an object with name property
-                        if (typeof item === 'object' && item.name) {
-                            return item.name === name;
-                        }
-                        // Case 2: Item is a string
-                        else if (typeof item === 'string') {
-                            return item === name;
-                        }
-                        return false;
-                    });
+                    const foundItem = locData.item === name;
+                    
         
                     if (foundItem) {
                         locationData = locData;
