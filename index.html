@@ -377,6 +377,7 @@
             "UV Lantern Chest": {x: 361, y: 16665},
             //"Upgraded to B.B. Wand": {x: 7898, y: 15437}
         };
+        debug = false;
         const MAP_WIDTH = 30720;
         const MAP_HEIGHT = 17280;
 
@@ -433,31 +434,33 @@
         map.setMaxBounds(bounds2);
 
         // Add this click handler to your map
-        map.on('click', function(e) {
-            // Get the projected pixel coordinates
-            const pixelCoords = map.project(e.latlng, 0);
-            
-            // Format as {x: x_val, y: y_val}
-            const coordString = `{x: ${Math.round(pixelCoords.x)}, y: ${Math.round(pixelCoords.y)}}`;
-            
-            // Copy to clipboard
-            navigator.clipboard.writeText(coordString)
-                .then(() => {
-                    // Visual feedback
-                    const tempPopup = L.popup()
-                        .setLatLng(e.latlng)
-                        .setContent(`Copied!<br>${coordString}`)
-                        .openOn(map);
-                    
-                    // Auto-close after 1 second
-                    setTimeout(() => map.closePopup(tempPopup), 1000);
-                })
-                .catch(err => {
-                    console.error('Failed to copy: ', err);
-                    // Fallback for older browsers
-                    prompt('Copy these coordinates:', coordString);
-                });
-        });
+        if(debug) {
+            map.on('click', function(e) {
+                // Get the projected pixel coordinates
+                const pixelCoords = map.project(e.latlng, 0);
+                
+                // Format as {x: x_val, y: y_val}
+                const coordString = `{x: ${Math.round(pixelCoords.x)}, y: ${Math.round(pixelCoords.y)}}`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(coordString)
+                    .then(() => {
+                        // Visual feedback
+                        const tempPopup = L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(`Copied!<br>${coordString}`)
+                            .openOn(map);
+                        
+                        // Auto-close after 1 second
+                        setTimeout(() => map.closePopup(tempPopup), 1000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        // Fallback for older browsers
+                        prompt('Copy these coordinates:', coordString);
+                    });
+            });
+        }
         
         const items = {
             "Pencil": {
@@ -906,7 +909,7 @@
                     const lines = locationsSection.split('\n');
                     
                     for (const line of lines) {
-                        console.log(line);
+                       // console.log(line);
                         const trimmedLine = line.trim();
                         if (!trimmedLine) continue;
                         
@@ -949,7 +952,7 @@
                 const locationName = location;
                 const locationCoords = locData.coords;
                 const itemName = locData.item;
-                console.log(`Item: ${itemName}, Location: ${locationName}, Coordinates: ${JSON.stringify(locationCoords)}`);
+               // console.log(`Item: ${itemName}, Location: ${locationName}, Coordinates: ${JSON.stringify(locationCoords)}`);
                 // Only proceed if we have coordinates for this location
                 if (locationCoords && locationCoords.x && locationCoords.y) {
                     itemLocationMap[location] = {
@@ -1035,7 +1038,7 @@
               allMarkers.length = 0;
             }
           
-            console.log('All markers cleared', config.preserveGroups.length ? `(preserved ${config.preserveGroups.join(', ')})` : '');
+            //console.log('All markers cleared', config.preserveGroups.length ? `(preserved ${config.preserveGroups.join(', ')})` : '');
           }
         
           
@@ -1105,14 +1108,14 @@
         
             try {
                 const { name, x, y } = JSON.parse(li.dataset.item);
-                console.log(`Clicked on: ${name} at (${x}, ${y})`);
+                //console.log(`Clicked on: ${name} at (${x}, ${y})`);
                 searchBox.value = name;
                 resultsList.style.display = 'none';
                 const latlng = map.unproject([x, y], 0);
                 map.flyTo(latlng, -2);
         
                 // Debug: Log the current itemLocationMap structure
-                console.log('Current itemLocationMap:', itemLocationMap);
+                //console.log('Current itemLocationMap:', itemLocationMap);
         
                 // Find the location data containing this item
                 let locationData = null;
