@@ -1080,20 +1080,14 @@
                 );
                 
                 // Tooltip on hover
-                marker.bindTooltip(`
-                    <strong>${locationName}</strong><br>
-                    <em>Contains:</em> ${foundItem}
-                `, {
-                    permanent: false,
-                    direction: 'top',
-                    className: 'marker-tooltip'
-                });
+                
                 
                 // Popup on click
                 marker.bindPopup(`
-                    <h3>${locationName}</h3>
-                    <p>Contains: <strong>${foundItem}</strong></p>
-                `);
+                        <h3>${foundItem}</h3>
+                        <p>Found at: <strong>${locationName}</strong></p>`
+                       // <img src="${locData.icon}" alt="${itemName}" style="max-width: 64px;">
+                    );
                 let groupKey = 'other';
                 for (const [key, {items}] of Object.entries(layerGroups)) {
                   if (items.includes(foundItem)) {
@@ -1257,22 +1251,14 @@
                         }
                     );
                     
-                    // Tooltip on hover
-                    marker.bindTooltip(`
-                        <strong>${locationName}</strong><br>
-                        <em>Contains:</em> ${itemName}
-                    `, {
-                        permanent: false,
-                        direction: 'top',
-                        className: 'marker-tooltip'
-                    });
+                   
                     
                     // Popup on click
                     marker.bindPopup(`
-                        <h3>${locationName}</h3>
-                        <p>Contains: <strong>${itemName}</strong></p>
-                        <img src="${locData.icon}" alt="${itemName}" style="max-width: 64px;">
-                    `);
+                        <h3>${itemName}</h3>
+                        <p>Found at: <strong>${locationName}</strong></p>`
+                       // <img src="${locData.icon}" alt="${itemName}" style="max-width: 64px;">
+                    );
                     
                     let groupKey = 'other';
                     for (const [key, {items}] of Object.entries(layerGroups)) {
@@ -1450,9 +1436,8 @@
                 }).addTo(map);
                 
                 searchMarker.bindPopup(`
-                    <h3>${name}</h3>
-                    <p>Location: ${foundLocation}</p>
-                    ${iconPath ? `<img src="${iconPath}" alt="${name}" style="max-width: 64px;">` : ''}
+                    <h3>${locationData.item}</h3>
+                    <p>Found at: <strong>${foundLocation}</strong></p>
                 `).openPopup();
         
                 // Remove previous search marker if exists
