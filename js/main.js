@@ -446,8 +446,8 @@ const layerGroups = {
 const debug = false;
 const MAP_WIDTH = 30720;
 const MAP_HEIGHT = 17280;
-const CHUNK_WIDTH = 1920;
-const CHUNK_HEIGHT = 1080;
+const CHUNK_WIDTH = 960;
+const CHUNK_HEIGHT = 540;
 
 // Initialize sidebar and toggle button
 const sidebar = document.getElementById('sidebar');
@@ -515,6 +515,55 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     });
 });
+
+const coordDisplay = L.control({position: 'topright'});
+coordDisplay.onAdd = function(map) {
+    this._div = L.DomUtil.create('div', 'coordinate-display');
+    this.update();
+    return this._div;
+};
+
+coordDisplay.update = function(coords) {
+    this._div.innerHTML = coords ? 
+        `Row: ${Math.trunc(coords.y/(1080))}, Column: ${Math.trunc(coords.x/(1920))}` : 
+        'Move mouse over map';
+};
+
+coordDisplay.addTo(map);
+
+map.on('mousemove', function(e) {
+    
+    const point = map.project(e.latlng, 0);
+    if (point.x < 0 || point.x > MAP_WIDTH || point.y < 0 || point.y > MAP_HEIGHT) {
+        coordDisplay.update();
+        return;
+    }
+    const coords = {
+        x: Math.round(point.x),
+        y: Math.round(point.y) 
+    };
+    coordDisplay.update(coords);
+});
+
+map.on('mouseout', function() {
+    coordDisplay.update();
+});
+
+// Add some basic CSS for the coordinate display
+const style = document.createElement('style');
+style.textContent = `
+    .coordinate-display {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        color: black;
+    }
+`;
+document.head.appendChild(style);
+
 Object.values(layerGroups).forEach(({group}) => group.addTo(map));
 
 
