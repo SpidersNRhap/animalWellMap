@@ -1,9 +1,9 @@
 :root {
-    --sidebar-width: 250px;
-    --sidebar-collapsed-width: 0px;
-    --sidebar-padding: 20px;
+    --sidebar-width: 15vw;
+    --sidebar-collapsed-width: 0vw;
+    --sidebar-padding: 1vw;
     --toggle-btn-size: 30px;
-    --toggle-btn-offset: 30px;
+    --toggle-btn-offset: 1vw;
     --zoom-control-size: 40px;
     --search-results-max-height: 300px;
 }
@@ -110,8 +110,8 @@ body {
 
 .leaflet-control-zoom {
     position: fixed !important;
-    right: 20px !important;
-    bottom: 20px !important;
+    right: 0vw !important;
+    bottom: 0vh !important;
     z-index: 1000 !important;
     background: #3d3d3d;
     border: 1px solid #555 !important;
@@ -214,6 +214,27 @@ input[type="file"] {
     padding: 5px;
     border-radius: 4px;
     font-size: 0.8em;
+}
+
+.leaflet-top.leaflet-right {
+    position: static !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+.coordinate-display {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    color: black;
+    position: fixed !important;
+    right: 0vw !important;
+    top: 0vh !important;
+    z-index: 1000 !important;
+    /* z-index: 1000; */
+    /* position: fixed; */
 }
 
 /* Responsive adjustments */

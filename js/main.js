@@ -461,7 +461,7 @@ const map = L.map('map', {
     maxZoom: 2,
     zoomSnap: 0.05,
     preferCanvas: true,
-    maxBoundsViscosity: 3.0,
+    maxBoundsViscosity: 1.0,
     zoomControl: false // Disable default zoom control
 });
 
@@ -498,8 +498,8 @@ for (let row = 0; row < rows; row++) {
 }
 
 // Set initial map view and bounds
-map.fitBounds(bounds.pad(0.1));
-map.setMaxBounds(bounds2.pad(0.1));
+map.fitBounds(bounds.pad(0.5));
+map.setMaxBounds(bounds2.pad(0.5));
 document.addEventListener('DOMContentLoaded', function() {
     // Map configuration constants
     
@@ -549,20 +549,11 @@ map.on('mouseout', function() {
     coordDisplay.update();
 });
 
-// Add some basic CSS for the coordinate display
-const style = document.createElement('style');
-style.textContent = `
-    .coordinate-display {
-        background: rgba(255, 255, 255, 0.8);
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 14px;
-        box-shadow: 0 0 5px rgba(0,0,0,0.2);
-        color: black;
-    }
-`;
-document.head.appendChild(style);
+// const style = document.createElement('style');
+// style.textContent = `
+    
+// `;
+// document.head.appendChild(style);
 
 Object.values(layerGroups).forEach(({group}) => group.addTo(map));
 
