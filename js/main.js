@@ -639,27 +639,7 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
         
 
     if (foundItem) {
-        itemLocationMap[locationName] = {
-            item: foundItem,
-            coords: locationData,
-            icon: items[foundItem]?.icon || `assets/icons/${foundItem.replace(/"/g, '')}.png`
-        };
-        const icon = createCenteredIcon(items[foundItem].icon, [32, 32]);
-        
-        const marker = L.marker(
-            map.unproject([locationData.x, locationData.y], 0),
-            { 
-                icon: icon,
-                riseOnHover: true
-            }
-        );
-
-        marker.bindPopup(`
-            <h3>${foundItem}</h3>
-            <p>Found at: <strong>${locationName}</strong></p>`
-        );
-
-        addMarkerToGroups(marker, foundItem);
+        generateMarker(locationName, locationData, foundItem, items[foundItem].icon);
         
         updateMarkerCounts();
         if (debug) validateEggs();
@@ -834,7 +814,6 @@ function updateAllCounts() {
         }
     });
 }
-// document.addEventListener('DOMContentLoaded',);
 
 function setupSpoilerLogParser(locationsDB, items) {
     const fileInput = document.getElementById('spoiler-log-file');
@@ -911,6 +890,27 @@ function setupSpoilerLogParser(locationsDB, items) {
     }
 }
 
+function generateMarker(locationName, locationCoords, itemName, itemIcon) {
+    itemLocationMap[locationName] = {
+        item: itemName,
+        coords: locationCoords,
+        icon: items[itemName]?.icon || `assets/icons/${itemName.replace(/"/g, '')}.png`
+    };
+    const icon = createCenteredIcon(itemIcon, [32, 32]);
+    
+    const marker = L.marker(
+        map.unproject([locationCoords.x, locationCoords.y], 0),
+        { 
+            icon: icon,
+            riseOnHover: true
+        }
+    );
+    marker.bindPopup(`
+        <h3>${itemName}</h3>
+        <p>Found at: <strong>${locationName}</strong></p>`
+    );
+    addMarkerToGroups(marker, itemName);
+};
 
 function markSpoilerLogLocations(parsedData, map, items) {
     clearAllMarkers();
@@ -922,7 +922,6 @@ function markSpoilerLogLocations(parsedData, map, items) {
         });
     });
     
-    // Count actual items from spoiler log
     Object.values(itemLocationMap).forEach(locData => {
         const itemName = locData.item;
         if (itemCounts[itemName] !== undefined) {
@@ -936,46 +935,20 @@ function markSpoilerLogLocations(parsedData, map, items) {
         const itemName = locData.item;
         
             
-        // console.log(`Item: ${itemName}, Location: ${locationName}, Coordinates: ${JSON.stringify(locationCoords)}`);
         if (locationCoords && locationCoords.x && locationCoords.y) {
-            itemLocationMap[location] = {
-                item: itemName,
-                coords: locationCoords,
-                icon: items[itemName]?.icon || `assets/icons/${itemName.replace(/"/g, '')}.png`
-            };
-            const icon = createCenteredIcon(locData.icon, [32, 32]);
+            generateMarker(locationName, locationCoords, itemName, locData.icon);
             
-            const marker = L.marker(
-                map.unproject([locationCoords.x, locationCoords.y], 0),
-                { 
-                    icon: icon,
-                    riseOnHover: true
-                }
-            );
-            
-            
-            
-            marker.bindPopup(`
-                <h3>${itemName}</h3>
-                <p>Found at: <strong>${locationName}</strong></p>`
-            );
-            
-            addMarkerToGroups(marker, itemName);
-            
-            // marker.addTo(layerGroups[groupKey].group);
             updateAllItemCounts(itemCounts);
             updateMarkerCounts();
             if (debug) validateEggs();
         } else {
             console.warn(`No coordinates found for location: ${locationName}`);
         }
-      //  generateItemControls();
 
     });
 }
 
 function updateAllItemCounts(itemCounts) {
-    // Update counts for each item in the control panel
     document.querySelectorAll('.item-control').forEach(itemControl => {
         const itemName = itemControl.querySelector('input').dataset.item;
         const countElement = itemControl.querySelector('.item-count');
@@ -1003,15 +976,12 @@ function updateMarkerCounts() {
 }
 
 function clearAllMarkers() {
-    // Clear all layer groups
     Object.values(layerGroups).forEach(groupData => {
         groupData.group.clearLayers();
         Object.values(groupData.itemLayers).forEach(layer => {
             layer.clearLayers();
         });
     });
-    
-    // Clear any existing search markers
     if (window.previousSearchMarker) {
         map.removeLayer(window.previousSearchMarker);
         window.previousSearchMarker = null;
@@ -1041,7 +1011,7 @@ function setupSearch() {
                     .some(word => word.startsWith(query));
                 return itemMatch || locationMatch || partialMatch;
             })
-            .sort((a, b) => a[0].localeCompare(b[0])); // Alphabetical sort
+            .sort((a, b) => a[0].localeCompare(b[0]));
 
         if (results.length === 0) {
             resultsList.innerHTML = '<li class="no-results">No results found</li>';
