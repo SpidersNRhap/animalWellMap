@@ -397,17 +397,36 @@ const layerGroups = {
         group: L.layerGroup(),
         itemLayers: {},
         items: [
-        "Wheel", "B. Wand", "B.B. Wand", "Yoyo", "Slink", "Lantern", 
-        "Animal Flute", "Disc", "B. Ball", "Top", "UV Lantern", 
-        "Mock Disc", "Remote", "Key Ring", "Matchbox"
-        ]
+        "Firecracker Refill", "Animal Flute", "Lantern", "Top",
+        "Disc", "Mock Disc",
+        "B. Wand", "B.B. Wand", "Yoyo", "Slink",  
+        "Remote", "B. Ball", "Wheel", "UV Lantern", 
+        "Key Ring", "Matchbox",
+        ],
+        default: true
     },
     flames: {
         group: L.layerGroup(),
         itemLayers: {},
         items: [
-        "B. Flame", "P. Flame", "G. Flame", "V. Flame"
-        ]
+        "P. Flame", "V. Flame", "B. Flame",   "G. Flame",
+        ],
+        default: true
+    },
+    misc: {
+        group: L.layerGroup(),
+        itemLayers: {},
+        items: [
+        "Candle",  "Match", "Pencil", "Stamp", "Map", "Key",  
+        "House Key", "Office Key", "Fanny Pack",// "Firecracker Refill"
+        ],
+        default: true
+    },
+    fruits: {
+        group: L.layerGroup(),
+        itemLayers: {},
+        items: ["Pink Fruit", "Blue Fruit", "Big Blue Fruit"],
+        default: false
     },
     bunnies: {
         group: L.layerGroup(),
@@ -419,45 +438,47 @@ const layerGroups = {
         "Lava Bunny", "Disc Spike Bunny", "Flashing Bunny",
         "Paper Bunny", "Illusion Bunny", "Community Bunny",
         "Face Bunny"
-        ]
-    },
-    fruits: {
-        group: L.layerGroup(),
-        itemLayers: {},
-        items: ["Pink Fruit", "Blue Fruit", "Big Blue Fruit"]
+        ],
+        default: false
     },
     eggs: {
         group: L.layerGroup(),
         itemLayers: {},
         items: [
-        "65th Egg", "Ancient Egg", "Big Egg", "Brick Egg",//4
+        "65th Egg", "Ancient Egg", "Big Egg", "Brick Egg",
         "Brown Egg", "Bubble Egg", "Chaos Egg", "Chocolate Egg",
         "Clover Egg", "Crystal Egg", "Dazzle Egg", "Depraved Egg",
-        "Desert Egg", "Dream Egg", "Egg As A Service", "Evil Egg",//16
+        "Desert Egg", "Dream Egg", "Egg As A Service", "Evil Egg",
         "Fire Egg", "Forbidden Egg", "Friendship Egg", "Future Egg",
-        "Galaxy Egg", "Golden Egg", "Goodnight Egg", "Gorgeous Egg",//24
+        "Galaxy Egg", "Golden Egg", "Goodnight Egg", "Gorgeous Egg",
         "Great Egg", "Holiday Egg", "Ice Egg", "Iridescent Egg",
-        "Jade Egg", "Laissez-faire Egg", "Magic Egg", "Moon Egg",//32
+        "Jade Egg", "Laissez-faire Egg", "Magic Egg", "Moon Egg",
         "Mystic Egg", "Neon Egg", "Normal Egg", "Obsidian Egg",
-        "Orange Egg", "Pickled Egg", "Planet Egg", "Plant Egg",//40
-        "Post Modern Egg", "Promise Egg", "Rain Egg",//43
-        "Raw Egg", "Razzle Egg", "Red Egg", "Reference Egg",//47
+        "Orange Egg", "Pickled Egg", "Planet Egg", "Plant Egg",
+        "Post Modern Egg", "Promise Egg", "Rain Egg",
+        "Raw Egg", "Razzle Egg", "Red Egg", "Reference Egg",
         "Ruby Egg", "Rust Egg", "Sapphire Egg", "Scarlet Egg",
-        "Shadow Egg", "Sour Egg", "Sunset Egg", "Swan Egg",//55
+        "Shadow Egg", "Sour Egg", "Sunset Egg", "Swan Egg",
         "Sweet Egg", "Transcendental Egg", "Travel Egg",
         "Truth Egg", "Universal Basic Egg", "Upside Down Egg",
-        "Value Egg", "Vanity Egg", "Virtual Egg", "Zen Egg"//65
-        ]
-    },
-    other: {
-        group: L.layerGroup(),
-        itemLayers: {},
-        items: [
-        "Pencil", "Stamp", "Map", "Match", "Key", "Candle", 
-        "House Key", "Office Key", "Fanny Pack", "Firecracker", "Firecracker Refill"
-        ]
+        "Value Egg", "Vanity Egg", "Virtual Egg", "Zen Egg"
+        ],
+        default: false
     },
 };
+
+const itemToGroupMap = {};
+Object.values(layerGroups).forEach(group => {
+    group.items.forEach(item => {
+        itemToGroupMap[item] = group;
+    });
+    group.group = L.layerGroup();
+    group.itemLayers = {};
+    group.items.forEach(item => {
+        group.itemLayers[item] = L.layerGroup();
+    });
+});
+
 
 const debug = false;
 const MAP_WIDTH = 30720;
@@ -510,8 +531,8 @@ for (let row = 0; row < rows; row++) {
 
 map.fitBounds(bounds.pad(0.6));
 map.setMaxBounds(bounds2.pad(0.6));
-document.addEventListener('DOMContentLoaded', function() {
 
+function toggleSidebar() {
     toggleBtn.addEventListener('click', function() {
         sidebar.classList.toggle('collapsed');
         mapElement.classList.toggle('sidebar-collapsed');
@@ -519,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
             map.invalidateSize();
         }, 300);
     });
-});
+}
 
 const coordDisplay = L.control({position: 'topright'});
 coordDisplay.onAdd = function(map) {
@@ -554,7 +575,6 @@ map.on('mouseout', function() {
     coordDisplay.update();
 });
 
-// Object.values(layerGroups).forEach(({group}) => group.addTo(map));
 Object.values(layerGroups).forEach(category => {
     category.items.forEach(item => {
         category.itemLayers[item] = L.layerGroup();
@@ -576,6 +596,14 @@ function createCenteredIcon(iconUrl, maxSize = 32) {
     });
 }
 let itemLocationMap = {};
+function addMarkerToGroups(marker, itemName) {
+    const group = itemToGroupMap[itemName];
+    if (group) {
+        marker.addTo(group.itemLayers[itemName]);
+        // Add to main group if you want category-level control
+        marker.addTo(group.group); 
+    }
+}
 
 Object.entries(locationsDB).forEach(([locationName, locationData]) => {
     function findItemForLocation(locationName, items) {
@@ -631,17 +659,8 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
             <p>Found at: <strong>${locationName}</strong></p>`
         );
 
-       // let groupKey = 'other';
-        for (const [groupName, group] of Object.entries(layerGroups)) {
-            if (group.items.includes(foundItem)) {
-                //groupKey = key;
-                marker.addTo(group.group);
-                marker.addTo(group.itemLayers[foundItem]);
-                break;
-            }
-        }
+        addMarkerToGroups(marker, foundItem);
         
-        // marker.addTo(layerGroups[groupKey].group);
         updateMarkerCounts();
         if (debug) validateEggs();
     }
@@ -671,7 +690,7 @@ function generateItemControls() {
         header.className = 'category-header';
         header.innerHTML = `
             <label class="category-toggle-container">
-                <input type="checkbox" id="toggle-${groupName}" class="category-toggle" checked>
+                <input type="checkbox" id="toggle-${groupName}" class="category-toggle" ${group.default ? 'checked' : ''}>
                 <span class="category-name">${groupName.charAt(0).toUpperCase() + groupName.slice(1)}</span>
                 <!-- <span class="item-count">(${group.items.length})</span> -->
             </label>
@@ -695,7 +714,7 @@ function generateItemControls() {
             itemDiv.innerHTML = `
                 <label>
                     <input type="checkbox" id="${groupName}-${itemName.replace(/\W+/g, '-')}" 
-                           class="item-toggle" checked
+                           class="item-toggle" ${group.default ? 'checked' : ''}
                            data-group="${groupName}" data-item="${itemName}">
                     <img src="${items[itemName]?.icon || 'assets/icons/default.png'}" 
                          class="control-icon" alt="${itemName}">
@@ -728,7 +747,18 @@ function generateItemControls() {
 
     });
     
-    Object.keys(layerGroups).forEach(groupName => {
+    Object.entries(layerGroups).forEach(([groupName, group]) => {
+        if (group.default) {
+            group.group.addTo(map);
+            group.items.forEach(itemName => {
+                group.itemLayers[itemName].addTo(map);
+            });
+        } else {
+            group.group.remove();
+            group.items.forEach(itemName => {
+                group.itemLayers[itemName].remove();
+            });
+        }
         updateCategoryToggleState(groupName);
     });
     
@@ -804,30 +834,7 @@ function updateAllCounts() {
         }
     });
 }
-document.addEventListener('DOMContentLoaded',generateItemControls());
-
-document.getElementById('toggle-bunnies').addEventListener('change', function(e) {
-    e.target.checked ? layerGroups.bunnies.group.addTo(map) : layerGroups.bunnies.group.remove();
-});
-    
-document.getElementById('toggle-fruits').addEventListener('change', function(e) {
-    e.target.checked ? layerGroups.fruits.group.addTo(map) : layerGroups.fruits.group.remove();
-});
-
-document.getElementById('toggle-equipment').addEventListener('change', function(e) {
-    e.target.checked ? layerGroups.equipment.group.addTo(map) : layerGroups.equipment.group.remove();
-});
-
-document.getElementById('toggle-eggs').addEventListener('change', function(e) {
-    e.target.checked ? layerGroups.eggs.group.addTo(map) : layerGroups.eggs.group.remove();
-});
-
-document.getElementById('toggle-other').addEventListener('change', function(e) {
-    e.target.checked ? layerGroups.other.group.addTo(map) : layerGroups.other.group.remove();
-})
-document.getElementById('toggle-flames').addEventListener('change', function(e) {
-    e.target.checked ? layerGroups.flames.group.addTo(map) : layerGroups.flames.group.remove();
-})
+// document.addEventListener('DOMContentLoaded',);
 
 function setupSpoilerLogParser(locationsDB, items) {
     const fileInput = document.getElementById('spoiler-log-file');
@@ -904,8 +911,7 @@ function setupSpoilerLogParser(locationsDB, items) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-setupSpoilerLogParser(locationsDB, items);});
+
 function markSpoilerLogLocations(parsedData, map, items) {
     clearAllMarkers();
     const itemCounts = {};
@@ -954,14 +960,7 @@ function markSpoilerLogLocations(parsedData, map, items) {
                 <p>Found at: <strong>${locationName}</strong></p>`
             );
             
-            for (const [groupName, group] of Object.entries(layerGroups)) {
-                if (group.items.includes(itemName)) {
-                    //groupKey = key;
-                    marker.addTo(group.group);
-                    marker.addTo(group.itemLayers[itemName]);
-                    break;
-                }
-            }
+            addMarkerToGroups(marker, itemName);
             
             // marker.addTo(layerGroups[groupKey].group);
             updateAllItemCounts(itemCounts);
@@ -1146,11 +1145,12 @@ function setupSearch() {
     });
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupSearch);
-} else {
+document.addEventListener('DOMContentLoaded', function() {
+    toggleSidebar();
+    generateItemControls()
+    setupSpoilerLogParser(locationsDB, items);
     setupSearch();
-}
+});
 
 function validateEggs(){
     let eggs = [...layerGroups.eggs.items];
@@ -1159,8 +1159,8 @@ function validateEggs(){
             const item = locData.item;
             if (eggs.includes(item)) {
                 const index = eggs.indexOf(item);
-                if (index > -1) { // only splice array when item is found
-                    eggs.splice(index, 1); // 2nd parameter means remove one item only
+                if (index > -1) { 
+                    eggs.splice(index, 1); 
                 }
             }else if (layerGroups.eggs.items.includes(item)) {
                 eggs.push(item);
