@@ -986,7 +986,7 @@ function markSpoilerLogLocations(parsedData, map, items) {
         } else {
             console.warn(`No coordinates found for location: ${locationName}`);
         }
-        generateItemControls();
+      //  generateItemControls();
 
     });
 }
