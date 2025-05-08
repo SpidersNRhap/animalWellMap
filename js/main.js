@@ -562,38 +562,6 @@ Object.values(layerGroups).forEach(category => {
     category.group.addTo(map);
 });
 
-function updateMarkerCounts() {
-    //console.log('Updating marker counts...'); // Debug log
-    
-    if (!layerGroups) {
-        console.error('layerGroups is not defined');
-        return;
-    }
-
-    Object.entries(layerGroups).forEach(([groupName, groupData]) => {
-        try {
-            if (!groupData || !groupData.group) {
-                console.warn(`No group data for ${groupName}`);
-                return;
-            }
-
-            const layers = groupData.group.getLayers();
-            const count = layers ? layers.length : 0;
-            //console.log(`Group ${groupName} has ${count} markers`); // Debug log
-
-            const label = document.querySelector(`label[for="toggle-${groupName}"]`);
-            if (!label) {
-                console.warn(`Label for toggle-${groupName} not found`);
-                return;
-            }
-
-            const capitalized = groupName.charAt(0).toUpperCase() + groupName.slice(1);
-            label.innerHTML = `${capitalized} <span class="marker-count">(${count})</span>`;
-        } catch (error) {
-            console.error(`Error processing ${groupName}:`, error);
-        }
-    });
-}
     
 function createCenteredIcon(iconUrl, maxSize = 32) {
     const targetSize = Array.isArray(maxSize) ? maxSize : [maxSize, maxSize];
@@ -744,7 +712,6 @@ function generateItemControls() {
         controlsContainer.appendChild(categoryDiv);
         
         const arrow = header.querySelector('.collapse-arrow');
-        const categoryToggle = header.querySelector('.category-toggle');
     
 
 
@@ -833,7 +800,7 @@ function updateCategoryToggleState(groupName) {
 function updateAllCounts() {
     Object.entries(layerGroups).forEach(([name, {group, countElement}]) => {
         if (countElement) {
-        countElement.textContent = group.getLayers().length;
+            countElement.textContent = group.getLayers().length;
         }
     });
 }
@@ -941,6 +908,22 @@ document.addEventListener('DOMContentLoaded', function() {
 setupSpoilerLogParser(locationsDB, items);});
 function markSpoilerLogLocations(parsedData, map, items) {
     clearAllMarkers();
+    const itemCounts = {};
+
+    Object.values(layerGroups).forEach(group => {
+        group.items.forEach(item => {
+            itemCounts[item] = 0;
+        });
+    });
+    
+    // Count actual items from spoiler log
+    Object.values(itemLocationMap).forEach(locData => {
+        const itemName = locData.item;
+        if (itemCounts[itemName] !== undefined) {
+            itemCounts[itemName]++;
+        }
+    });
+
     Object.entries(parsedData).forEach(([location, locData]) => {
         const locationName = location;
         const locationCoords = locData.coords;
@@ -981,6 +964,7 @@ function markSpoilerLogLocations(parsedData, map, items) {
             }
             
             // marker.addTo(layerGroups[groupKey].group);
+            updateAllItemCounts(itemCounts);
             updateMarkerCounts();
             if (debug) validateEggs();
         } else {
@@ -990,35 +974,49 @@ function markSpoilerLogLocations(parsedData, map, items) {
 
     });
 }
-function clearAllMarkers(options = {}) {
-    const defaults = {
-        clearMapLayers: true,
-        preserveGroups: []
-    };
-    const config = { ...defaults, ...options };
-    
-    Object.entries(layerGroups).forEach(([groupName,  {group} ]) => {
-        if (!config.preserveGroups.includes(groupName)) {
-            group.clearLayers();
+
+function updateAllItemCounts(itemCounts) {
+    // Update counts for each item in the control panel
+    document.querySelectorAll('.item-control').forEach(itemControl => {
+        const itemName = itemControl.querySelector('input').dataset.item;
+        const countElement = itemControl.querySelector('.item-count');
+        
+        if (itemCounts[itemName] !== undefined) {
+            countElement.textContent = itemCounts[itemName];
+        } else {
+            countElement.textContent = '0';
         }
     });
-    Object.entries(layerGroups).forEach(([groupName,  {itemLayers} ]) => {
-        if (!config.preserveGroups.includes(groupName)) {
-            Object.values(itemLayers).forEach(layer => {
-                layer.clearLayers();
-            });
+}
+
+function updateMarkerCounts() {
+    Object.entries(layerGroups).forEach(([groupName, groupData]) => {
+        const totalItems = groupData.items.reduce((total, item) => {
+            return total + (groupData.itemLayers[item]?.getLayers().length || 0);
+        }, 0);
+        
+        const label = document.querySelector(`label[for="toggle-${groupName}"]`);
+        if (label) {
+            const capitalized = groupName.charAt(0).toUpperCase() + groupName.slice(1);
+            label.querySelector('.marker-count').textContent = `(${totalItems})`;
         }
     });
-    
-    if (config.clearMapLayers) {
-        map.eachLayer(layer => {
-        if (layer instanceof L.Marker || layer instanceof L.FeatureGroup) {
-            map.removeLayer(layer);
-        }
+}
+
+function clearAllMarkers() {
+    // Clear all layer groups
+    Object.values(layerGroups).forEach(groupData => {
+        groupData.group.clearLayers();
+        Object.values(groupData.itemLayers).forEach(layer => {
+            layer.clearLayers();
         });
-    }
+    });
     
-    updateAllCounts();
+    // Clear any existing search markers
+    if (window.previousSearchMarker) {
+        map.removeLayer(window.previousSearchMarker);
+        window.previousSearchMarker = null;
+    }
 }
     
    
