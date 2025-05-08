@@ -383,15 +383,35 @@ const items = {
     "Community Bunny": {icon: "assets/icons/Bunny.png"},
     "Face Bunny": {icon: "assets/icons/Bunny.png"},
 };
+
 const bunnyMarkers = L.layerGroup();
 const fruitMarkers = L.layerGroup();
 const equipmentMarkers = L.layerGroup();
 const eggMarkers = L.layerGroup();
 const otherMarkers = L.layerGroup();
-const allMarkers = L.layerGroup([bunnyMarkers, fruitMarkers, equipmentMarkers, eggMarkers, otherMarkers]);
+const flameMarkers = L.layerGroup();
+const allMarkers = L.layerGroup([bunnyMarkers, fruitMarkers, equipmentMarkers, eggMarkers, otherMarkers, flameMarkers]);
+
 const layerGroups = {
+    equipment: {
+        group: L.layerGroup(),
+        itemLayers: {},
+        items: [
+        "Wheel", "B. Wand", "B.B. Wand", "Yoyo", "Slink", "Lantern", 
+        "Animal Flute", "Disc", "B. Ball", "Top", "UV Lantern", 
+        "Mock Disc", "Remote", "Key Ring", "Matchbox"
+        ]
+    },
+    flames: {
+        group: L.layerGroup(),
+        itemLayers: {},
+        items: [
+        "B. Flame", "P. Flame", "G. Flame", "V. Flame"
+        ]
+    },
     bunnies: {
         group: L.layerGroup(),
+        itemLayers: {},
         items: [
         "Invisible Bunny", "Imaginary Bunny", "Flowering Bunny", 
         "Fish Bunny", "Water Spike Bunny", "Chinchilla Bunny",
@@ -403,18 +423,12 @@ const layerGroups = {
     },
     fruits: {
         group: L.layerGroup(),
+        itemLayers: {},
         items: ["Pink Fruit", "Blue Fruit", "Big Blue Fruit"]
-    },
-    equipment: {
-        group: L.layerGroup(),
-        items: [
-        "Wheel", "B. Wand", "B.B. Wand", "Yoyo", "Slink", "Lantern", 
-        "Animal Flute", "Disc", "B. Ball", "Top", "UV Lantern", 
-        "Mock Disc", "Remote", "Key Ring", "Matchbox"
-        ]
     },
     eggs: {
         group: L.layerGroup(),
+        itemLayers: {},
         items: [
         "65th Egg", "Ancient Egg", "Big Egg", "Brick Egg",//4
         "Brown Egg", "Bubble Egg", "Chaos Egg", "Chocolate Egg",
@@ -437,39 +451,37 @@ const layerGroups = {
     },
     other: {
         group: L.layerGroup(),
+        itemLayers: {},
         items: [
-        "Pencil", "Stamp", "Match", "Map", "Key", "Candle", 
-        "House Key", "Fanny Pack", "Firecracker", "Firecracker Refill"
+        "Pencil", "Stamp", "Map", "Match", "Key", "Candle", 
+        "House Key", "Office Key", "Fanny Pack", "Firecracker", "Firecracker Refill"
         ]
-    }
+    },
 };
+
 const debug = false;
 const MAP_WIDTH = 30720;
 const MAP_HEIGHT = 17280;
 const CHUNK_WIDTH = 960;
 const CHUNK_HEIGHT = 540;
 
-// Initialize sidebar and toggle button
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebarToggle');
 const mapElement = document.getElementById('map');
 
-// Initialize map with custom CRS
 const map = L.map('map', {
     crs: L.CRS.Simple,
     minZoom: -5,
     maxZoom: 2,
-    zoomSnap: 0.05,
+    zoomSnap: 0.02,
     preferCanvas: true,
     maxBoundsViscosity: 1.0,
-    zoomControl: false // Disable default zoom control
+    zoomControl: false 
 });
 
-// Add zoom control to bottom right
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 
-// Set up map bounds
 const southWest = map.unproject([0, MAP_HEIGHT], 0);
 const northEast = map.unproject([MAP_WIDTH, 0], 0);
 const southWest2 = map.unproject([0, MAP_HEIGHT], 0);
@@ -477,7 +489,6 @@ const northEast2 = map.unproject([MAP_WIDTH, 0], 0);
 const bounds = new L.LatLngBounds(southWest, northEast);
 const bounds2 = new L.LatLngBounds(southWest2, northEast2);
 
-// Add map chunks
 const cols = Math.ceil(MAP_WIDTH / CHUNK_WIDTH);
 const rows = Math.ceil(MAP_HEIGHT / CHUNK_HEIGHT);
 
@@ -497,19 +508,13 @@ for (let row = 0; row < rows; row++) {
     }
 }
 
-// Set initial map view and bounds
-map.fitBounds(bounds.pad(0.5));
-map.setMaxBounds(bounds2.pad(0.5));
+map.fitBounds(bounds.pad(0.6));
+map.setMaxBounds(bounds2.pad(0.6));
 document.addEventListener('DOMContentLoaded', function() {
-    // Map configuration constants
-    
 
-    // Sidebar toggle functionality
     toggleBtn.addEventListener('click', function() {
         sidebar.classList.toggle('collapsed');
         mapElement.classList.toggle('sidebar-collapsed');
-        
-        // Fix map rendering after transition
         setTimeout(() => {
             map.invalidateSize();
         }, 300);
@@ -549,14 +554,13 @@ map.on('mouseout', function() {
     coordDisplay.update();
 });
 
-// const style = document.createElement('style');
-// style.textContent = `
-    
-// `;
-// document.head.appendChild(style);
-
-Object.values(layerGroups).forEach(({group}) => group.addTo(map));
-
+// Object.values(layerGroups).forEach(({group}) => group.addTo(map));
+Object.values(layerGroups).forEach(category => {
+    category.items.forEach(item => {
+        category.itemLayers[item] = L.layerGroup();
+    });
+    category.group.addTo(map);
+});
 
 function updateMarkerCounts() {
     //console.log('Updating marker counts...'); // Debug log
@@ -590,63 +594,23 @@ function updateMarkerCounts() {
         }
     });
 }
-
     
 function createCenteredIcon(iconUrl, maxSize = 32) {
     const targetSize = Array.isArray(maxSize) ? maxSize : [maxSize, maxSize];
     
     return L.icon({
         iconUrl: iconUrl || 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        iconSize: targetSize, // This will be updated after image loads
+        iconSize: targetSize, 
         iconAnchor: [targetSize[0]/2, targetSize[1]/2],
         popupAnchor: [0, -targetSize[1]/2],
-        
-        // Create a custom icon class that maintains aspect ratio
         className: 'leaflet-custom-icon',
         
-        // Optional: Add this if you want to handle the image loading yourself
-        _initIcon: function() {
-            L.Icon.prototype._initIcon.call(this);
-            
-            const img = this._icon;
-            if (img.tagName === 'IMG') {
-                img.onload = () => {
-                    const naturalWidth = img.naturalWidth;
-                    const naturalHeight = img.naturalHeight;
-                    const aspectRatio = naturalWidth / naturalHeight;
-                    
-                    let width, height;
-                    
-                    if (aspectRatio > 1) {
-                        // Wider than tall
-                        width = Math.min(naturalWidth, targetSize[0]);
-                        height = width / aspectRatio;
-                    } else {
-                        // Taller than wide or square
-                        height = Math.min(naturalHeight, targetSize[1]);
-                        width = height * aspectRatio;
-                    }
-                    
-                    // Update the icon size
-                    this.options.iconSize = [width, height];
-                    this.options.iconAnchor = [width/2, height/2];
-                    this.options.popupAnchor = [0, -height/2];
-                    
-                    // Apply the new size
-                    img.style.width = `${width}px`;
-                    img.style.height = `${height}px`;
-                };
-            }
-        }
     });
 }
 let itemLocationMap = {};
-    
 
 Object.entries(locationsDB).forEach(([locationName, locationData]) => {
-    // Find which item this location contains
     function findItemForLocation(locationName, items) {
-        // First pass - look for exact start matches
         let startMatch = null;
         if (locationName.startsWith("Disc Spike Bunny")) {
             startMatch = "Disc Spike Bunny";
@@ -657,7 +621,7 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
         }
         if (startMatch) return startMatch;
     
-        // Second pass - look for any contains matches
+        //some items are named in silly ways
         const containsMatch = Object.keys(items).find(item => 
             locationName.toLowerCase().includes("candle")
         );
@@ -669,11 +633,9 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
             return "Disc";
         }
         return null;
-        // Final fallback - try to match partial words
         
     }
     
-    // Usage:
     const foundItem = findItemForLocation(locationName, items);
     if (debug) {
         console.log(`Location: ${locationName}, Found Item: ${foundItem}`);
@@ -695,31 +657,178 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
                 riseOnHover: true
             }
         );
-        
-        // Tooltip on hover
-        
-        
-        // Popup on click
+
         marker.bindPopup(`
-                <h3>${foundItem}</h3>
-                <p>Found at: <strong>${locationName}</strong></p>`
-                // <img src="${locData.icon}" alt="${itemName}" style="max-width: 64px;">
-            );
-        let groupKey = 'other';
-        for (const [key, {items}] of Object.entries(layerGroups)) {
-            if (items.includes(foundItem)) {
-            groupKey = key;
-            break;
+            <h3>${foundItem}</h3>
+            <p>Found at: <strong>${locationName}</strong></p>`
+        );
+
+       // let groupKey = 'other';
+        for (const [groupName, group] of Object.entries(layerGroups)) {
+            if (group.items.includes(foundItem)) {
+                //groupKey = key;
+                marker.addTo(group.group);
+                marker.addTo(group.itemLayers[foundItem]);
+                break;
             }
         }
         
-        // Add marker to the appropriate group
-        marker.addTo(layerGroups[groupKey].group);
+        // marker.addTo(layerGroups[groupKey].group);
         updateMarkerCounts();
         if (debug) validateEggs();
     }
 }); 
 
+document.querySelectorAll('.section-header').forEach(header => {
+    header.addEventListener('click', function() {
+        this.parentElement.classList.toggle('collapsed');
+    });
+});
+
+function generateItemControls() {
+    const controlsContainer = document.querySelector('#item-controls .section-content');
+    
+    if (!controlsContainer) {
+        console.error('Could not find controls container!');
+        return;
+    }
+    
+    controlsContainer.innerHTML = '';
+    
+    Object.entries(layerGroups).forEach(([groupName, group]) => {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'category';
+        
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.innerHTML = `
+            <label class="category-toggle-container">
+                <input type="checkbox" id="toggle-${groupName}" class="category-toggle" checked>
+                <span class="category-name">${groupName.charAt(0).toUpperCase() + groupName.slice(1)}</span>
+                <!-- <span class="item-count">(${group.items.length})</span> -->
+            </label>
+            <span class="collapse-arrow">▼</span>
+
+        `;
+        
+        const itemsContainer = document.createElement('div');
+        itemsContainer.className = 'item-list';
+        
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'item-grid';
+        
+        group.items.forEach(itemName => {
+            const itemCount = Object.values(itemLocationMap).filter(
+                locData => locData.item.trim().toLowerCase() === itemName.trim().toLowerCase()
+            ).length;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-control';
+            itemDiv.innerHTML = `
+                <label>
+                    <input type="checkbox" id="${groupName}-${itemName.replace(/\W+/g, '-')}" 
+                           class="item-toggle" checked
+                           data-group="${groupName}" data-item="${itemName}">
+                    <img src="${items[itemName]?.icon || 'assets/icons/default.png'}" 
+                         class="control-icon" alt="${itemName}">
+                    <span class="item-name">${itemName}</span>
+                    <span class="item-count">${itemCount}</span>
+                </label>
+            `;
+            gridContainer.appendChild(itemDiv);
+        });
+        
+        itemsContainer.appendChild(gridContainer);
+        categoryDiv.appendChild(header);
+        categoryDiv.appendChild(itemsContainer);
+        controlsContainer.appendChild(categoryDiv);
+        
+        const arrow = header.querySelector('.collapse-arrow');
+        const categoryToggle = header.querySelector('.category-toggle');
+    
+
+
+        arrow.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.classList.contains('category-toggle-container')) {
+                return;
+            }
+            
+            itemsContainer.classList.toggle('collapsed');
+            arrow.textContent = itemsContainer.classList.contains('collapsed') ? '▶' : '▼';
+            e.stopPropagation();
+        });
+        
+
+    });
+    
+    Object.keys(layerGroups).forEach(groupName => {
+        updateCategoryToggleState(groupName);
+    });
+    
+    setupControlEvents();
+}
+
+function setupControlEvents() {
+    document.querySelectorAll('.category-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const groupName = this.id.replace('toggle-', '');
+            const group = layerGroups[groupName];
+            const isChecked = this.checked;
+            
+            group.items.forEach(itemName => {
+                const itemLayer = group.itemLayers[itemName];
+                if (isChecked) {
+                    itemLayer.addTo(map);
+                } else {
+                    itemLayer.remove();
+                }
+            });
+            
+            document.querySelectorAll(`.item-toggle[data-group="${groupName}"]`).forEach(itemToggle => {
+                itemToggle.checked = isChecked;
+                itemToggle.indeterminate = false;
+            });
+            
+            updateMarkerCounts();
+        });
+    });
+    
+    document.querySelectorAll('.item-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const groupName = this.dataset.group;
+            const itemName = this.dataset.item;
+            const itemLayer = layerGroups[groupName].itemLayers[itemName];
+            
+            if (this.checked) {
+                itemLayer.addTo(map);
+            } else {
+                itemLayer.remove();
+            }
+            
+            updateCategoryToggleState(groupName);
+            updateMarkerCounts();
+        });
+    });
+}
+
+function updateCategoryToggleState(groupName) {
+    const categoryToggle = document.querySelector(`#toggle-${groupName}`);
+    const itemToggles = document.querySelectorAll(`.item-toggle[data-group="${groupName}"]`);
+    
+    const checkedCount = Array.from(itemToggles).filter(t => t.checked).length;
+    const totalCount = itemToggles.length;
+    
+    if (checkedCount === 0) {
+        categoryToggle.checked = false;
+        categoryToggle.indeterminate = false;
+    } else if (checkedCount === totalCount) {
+        categoryToggle.checked = true;
+        categoryToggle.indeterminate = false;
+    } else {
+        categoryToggle.checked = false;
+        categoryToggle.indeterminate = true;
+    }
+}
 
 function updateAllCounts() {
     Object.entries(layerGroups).forEach(([name, {group, countElement}]) => {
@@ -728,6 +837,8 @@ function updateAllCounts() {
         }
     });
 }
+document.addEventListener('DOMContentLoaded',generateItemControls());
+
 document.getElementById('toggle-bunnies').addEventListener('change', function(e) {
     e.target.checked ? layerGroups.bunnies.group.addTo(map) : layerGroups.bunnies.group.remove();
 });
@@ -747,11 +858,12 @@ document.getElementById('toggle-eggs').addEventListener('change', function(e) {
 document.getElementById('toggle-other').addEventListener('change', function(e) {
     e.target.checked ? layerGroups.other.group.addTo(map) : layerGroups.other.group.remove();
 })
+document.getElementById('toggle-flames').addEventListener('change', function(e) {
+    e.target.checked ? layerGroups.flames.group.addTo(map) : layerGroups.flames.group.remove();
+})
 
 function setupSpoilerLogParser(locationsDB, items) {
     const fileInput = document.getElementById('spoiler-log-file');
-    const urlInput = document.getElementById('spoiler-log-url');
-    const fetchButton = document.getElementById('fetch-log-btn');
     const resultsDiv = document.getElementById('spoiler-results');
     
     fileInput.addEventListener('change', async function(e) {
@@ -769,21 +881,6 @@ function setupSpoilerLogParser(locationsDB, items) {
         }
     });
     
-    fetchButton.addEventListener('click', async function() {
-        const url = urlInput.value.trim();
-        if (!url) return;
-        
-        try {
-            resultsDiv.style.display = 'block';
-            resultsDiv.textContent = 'Fetching spoiler log...';
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const content = await response.text();
-            parseSpoilerLog(content, resultsDiv, locationsDB, items);
-        } catch (error) {
-            resultsDiv.textContent = `Error fetching URL: ${error.message}`;
-        }
-    });
     
     function parseSpoilerLog(content, outputElement, locationsDB, items) {
         try {
@@ -831,7 +928,6 @@ function setupSpoilerLogParser(locationsDB, items) {
             
             outputElement.textContent = output;
             
-            // Add markers to map
             markSpoilerLogLocations(itemLocationMap, map, items);
             
         } catch (error) {
@@ -840,6 +936,7 @@ function setupSpoilerLogParser(locationsDB, items) {
         }
     }
 }
+
 document.addEventListener('DOMContentLoaded', function() {
 setupSpoilerLogParser(locationsDB, items);});
 function markSpoilerLogLocations(parsedData, map, items) {
@@ -851,7 +948,6 @@ function markSpoilerLogLocations(parsedData, map, items) {
         
             
         // console.log(`Item: ${itemName}, Location: ${locationName}, Coordinates: ${JSON.stringify(locationCoords)}`);
-        // Only proceed if we have coordinates for this location
         if (locationCoords && locationCoords.x && locationCoords.y) {
             itemLocationMap[location] = {
                 item: itemName,
@@ -870,31 +966,28 @@ function markSpoilerLogLocations(parsedData, map, items) {
             
             
             
-            // Popup on click
             marker.bindPopup(`
                 <h3>${itemName}</h3>
                 <p>Found at: <strong>${locationName}</strong></p>`
-                // <img src="${locData.icon}" alt="${itemName}" style="max-width: 64px;">
             );
             
-            let groupKey = 'other';
-            for (const [key, {items}] of Object.entries(layerGroups)) {
-                if (items.includes(itemName)) {
-                groupKey = key;
-                break;
+            for (const [groupName, group] of Object.entries(layerGroups)) {
+                if (group.items.includes(itemName)) {
+                    //groupKey = key;
+                    marker.addTo(group.group);
+                    marker.addTo(group.itemLayers[itemName]);
+                    break;
                 }
             }
             
-            // Add marker to the appropriate group
-            marker.addTo(layerGroups[groupKey].group);
+            // marker.addTo(layerGroups[groupKey].group);
             updateMarkerCounts();
             if (debug) validateEggs();
-            // Optional: Add to some global markers array if needed
-            // window.itemMarkers = window.itemMarkers || [];
-            // window.itemMarkers.push(marker);
         } else {
             console.warn(`No coordinates found for location: ${locationName}`);
         }
+        generateItemControls();
+
     });
 }
 function clearAllMarkers(options = {}) {
@@ -904,14 +997,19 @@ function clearAllMarkers(options = {}) {
     };
     const config = { ...defaults, ...options };
     
-    // Clear each layer group unless it's in preserveGroups
-    Object.entries(layerGroups).forEach(([groupName, { group }]) => {
+    Object.entries(layerGroups).forEach(([groupName,  {group} ]) => {
         if (!config.preserveGroups.includes(groupName)) {
-        group.clearLayers();
+            group.clearLayers();
+        }
+    });
+    Object.entries(layerGroups).forEach(([groupName,  {itemLayers} ]) => {
+        if (!config.preserveGroups.includes(groupName)) {
+            Object.values(itemLayers).forEach(layer => {
+                layer.clearLayers();
+            });
         }
     });
     
-    // Optionally clear other map layers (excluding base maps)
     if (config.clearMapLayers) {
         map.eachLayer(layer => {
         if (layer instanceof L.Marker || layer instanceof L.FeatureGroup) {
@@ -920,31 +1018,15 @@ function clearAllMarkers(options = {}) {
         });
     }
     
-    // Update the counts display
     updateAllCounts();
-    
-    // Clear any references in your allMarkers array if you're maintaining one
-    if (Array.isArray(allMarkers)) {
-        allMarkers.length = 0;
-    }
-    
-    //console.log('All markers cleared', config.preserveGroups.length ? `(preserved ${config.preserveGroups.join(', ')})` : '');
 }
     
-        
-    // Search functionality// Initialize search
-    // Update these variables to match your HTML IDs
+   
 const searchBox = document.getElementById('search-box');
 const resultsList = document.getElementById('resultsList');
 
-// Direct search function using itemLocationMap
-// Initialize itemLocationMap if not exists
 
-// Search elements
-// const mapElement = document.getElementById('map');
-// Improved search and click handling
 function setupSearch() {
-    // Handle search input
     function handleSearch() {
         const query = searchBox.value.trim().toLowerCase();
         resultsList.innerHTML = '';
@@ -954,7 +1036,6 @@ function setupSearch() {
             return;
         }
 
-        // Filter and sort results
         const results = Object.entries(itemLocationMap)
             .filter(([location, itemData]) => {
                 const itemMatch = itemData.item.toLowerCase().includes(query);
@@ -965,7 +1046,6 @@ function setupSearch() {
             })
             .sort((a, b) => a[0].localeCompare(b[0])); // Alphabetical sort
 
-        // Display results
         if (results.length === 0) {
             resultsList.innerHTML = '<li class="no-results">No results found</li>';
         } else {
@@ -991,38 +1071,29 @@ function setupSearch() {
         resultsList.style.display = results.length ? 'block' : 'none';
     }
 
-    // Event delegation for click handling
     resultsList.addEventListener('click', (e) => {
         const li = e.target.closest('.search-result');
         if (!li) return;
     
         try {
             const { name, x, y } = JSON.parse(li.dataset.item);
-            //console.log(`Clicked on: ${name} at (${x}, ${y})`);
             searchBox.value = name;
             resultsList.style.display = 'none';
             const latlng = map.unproject([x, y], 0);
             map.flyTo(latlng, -2);
-    
-            // Debug: Log the current itemLocationMap structure
-            //console.log('Current itemLocationMap:', itemLocationMap);
-    
-            // Find the location data containing this item
+           
             let locationData = null;
             let foundLocation = null;
             let itemData = null;
             
-            // Search through locations to find which one contains this item
             for (const [locationName, locData] of Object.entries(itemLocationMap)) {
                 if (!locData.item) {
                     console.warn(`Location ${locationName} has no items array`);
                     continue;
                 }
     
-                // Check different possible item structures
                 const foundItem = locData.item === name;
                 
-    
                 if (foundItem) {
                     locationData = locData;
                     foundLocation = locationName;
@@ -1036,7 +1107,6 @@ function setupSearch() {
                 return;
             }
     
-            // Determine icon to use (priority: item icon > location icon > default path)
             let iconPath;
             if (itemData && itemData.icon) {
                 iconPath = itemData.icon;
@@ -1046,7 +1116,6 @@ function setupSearch() {
                 iconPath = `assets/icons/${name.replace(/"/g, '')}.png`;
             }
     
-            // Create and show marker
             const searchMarker = L.marker(latlng, {
                 icon: createCenteredIcon(iconPath, [32, 32]),
                 riseOnHover: true
@@ -1057,7 +1126,6 @@ function setupSearch() {
                 <p>Found at: <strong>${foundLocation}</strong></p>
             `).openPopup();
     
-            // Remove previous search marker if exists
             if (window.previousSearchMarker) {
                 map.removeLayer(window.previousSearchMarker);
             }
@@ -1068,13 +1136,11 @@ function setupSearch() {
         }
     });
 
-    // Input and focus events
     searchBox.addEventListener('input', handleSearch);
     searchBox.addEventListener('focus', () => {
         if (searchBox.value.length >= 2) handleSearch();
     });
 
-    // Close when clicking outside
     document.addEventListener('click', (e) => {
         if (!searchBox.contains(e.target) && !resultsList.contains(e.target)) {
             resultsList.style.display = 'none';
@@ -1082,12 +1148,12 @@ function setupSearch() {
     });
 }
 
-// Initialize when ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupSearch);
 } else {
     setupSearch();
 }
+
 function validateEggs(){
     let eggs = [...layerGroups.eggs.items];
     console.log(eggs);
