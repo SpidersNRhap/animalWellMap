@@ -59,10 +59,9 @@ body {
 
 .toggle-btn {
     position: fixed;
-    left: calc(var(--sidebar-width) - (var(--toggle-btn-size) / 2));
+    left: calc(clamp(var(--min-sidebar-width), var(--sidebar-width), var(--max-sidebar-width)) - var(--toggle-btn-size) / 2);
     top: 50%;
     transform: translateY(-50%);
-    z-index: 1001;
     width: var(--toggle-btn-size);
     height: var(--toggle-btn-size);
     background: #3d3d3d;
@@ -71,6 +70,7 @@ body {
     border-radius: 0 5px 5px 0;
     box-shadow: 2px 0 5px rgba(0,0,0,0.5);
     cursor: pointer;
+    z-index: 1001;
     font-size: 16px;
     transition: left 0.3s ease;
 }
