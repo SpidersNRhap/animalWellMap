@@ -550,7 +550,7 @@ coordDisplay.onAdd = function(map) {
 
 coordDisplay.update = function(coords) {
     this._div.innerHTML = coords ? 
-        `Row: ${Math.trunc(coords.y/(1080))+1}, Column: ${Math.trunc(coords.x/(1920))+1}` : 
+        `Row: ${Math.trunc(coords.y/(1080))+1}, Column: ${Math.trunc(coords.x/(1920))}` : 
         'Move mouse over map';
 };
 
@@ -691,7 +691,7 @@ function generateItemControls() {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'item-control';
             itemDiv.innerHTML = `
-                <label>
+                <label title ="${itemName}">
                     <input type="checkbox" id="${groupName}-${itemName.replace(/\W+/g, '-')}" 
                            class="item-toggle" ${group.default ? 'checked' : ''}
                            data-group="${groupName}" data-item="${itemName}">
