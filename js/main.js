@@ -479,7 +479,7 @@ Object.values(layerGroups).forEach(group => {
     });
 });
 
-const debug = false;
+const debug = true;
 const MAP_WIDTH = 30720;
 const MAP_HEIGHT = 17280;
 const CHUNK_WIDTH = 960;
