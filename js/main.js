@@ -397,11 +397,11 @@ const layerGroups = {
         group: L.layerGroup(),
         itemLayers: {},
         items: [
-        "Firecracker Refill", "Animal Flute", "Lantern", "Top",
+        "Key Ring", "Animal Flute", "Lantern", "Top",
         "Disc", "Mock Disc",
         "B. Wand", "B.B. Wand", "Yoyo", "Slink",  
         "Remote", "B. Ball", "Wheel", "UV Lantern", 
-        "Key Ring", "Matchbox",
+         "Matchbox",
         ],
         default: true
     },
@@ -418,9 +418,9 @@ const layerGroups = {
         itemLayers: {},
         items: [
         "Candle",  "Match", "Pencil", "Stamp", "Map", "Key",  
-        "House Key", "Office Key", "Fanny Pack",// "Firecracker Refill"
+        "House Key", "Office Key", "Fanny Pack", "Firecracker Refill"
         ],
-        default: true
+        default: false
     },
     fruits: {
         group: L.layerGroup(),
@@ -478,7 +478,6 @@ Object.values(layerGroups).forEach(group => {
         group.itemLayers[item] = L.layerGroup();
     });
 });
-
 
 const debug = false;
 const MAP_WIDTH = 30720;
@@ -871,15 +870,7 @@ function setupSpoilerLogParser(locationsDB, items) {
                     };
                 }
             }
-            
-            let output = 'Item Locations:\n\n';
-            for (const [locationName, data] of Object.entries(itemLocationMap)) {
-                output += `"${data.item}" at "${locationName}"\n`;
-                output += `Coordinates: (${data.coords.x}, ${data.coords.y})\n`;
-                output += `Icon: ${data.icon}\n\n`;
-            }
-            
-            outputElement.textContent = output;
+            outputElement.textContent = "Spoiler log parsed!";
             
             markSpoilerLogLocations(itemLocationMap, map, items);
             
@@ -1116,6 +1107,7 @@ function setupSearch() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+ //   init();
     toggleSidebar();
     generateItemControls()
     setupSpoilerLogParser(locationsDB, items);
