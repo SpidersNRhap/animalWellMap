@@ -7,7 +7,6 @@
     --zoom-control-size: 40px;
     --search-results-max-height: 30vh;
     --control-icon-size: 16px;
-    --item-list-max-height: 1000px;
     --min-sidebar-width: 400px;
     --max-sidebar-width: 600px;
 }
@@ -217,7 +216,6 @@ body {
 .item-list {
     overflow: hidden;
     transition: max-height 0.3s ease;
-    max-height: var(--item-list-max-height);
 }
 
 .item-list.collapsed {

@@ -260,8 +260,28 @@ const locationsDB = {
     "Paper Bunny": {x: 9260, y: 3138},
     "Illusion Bunny": {x: 20594, y: 8438},
     "Community Bunny": {x: 23800, y: 8547},
-    "Face Bunny": {x: 10631, y: 11532}
-    //"Upgraded to B.B. Wand": {x: 7898, y: 15437}
+    "Face Bunny": {x: 10631, y: 11532},
+    //"Upgraded to B.B. Wand": {x: 7898, y: 15437},
+    "Phone R1C1": {x: 1760, y: 951},
+    "Phone R1C11": {x: 20137, y: 374},
+    "Phone R2C3": {x: 5452, y: 1833},
+    "Phone R3C8": {x: 14722, y: 2968},
+    "Phone R3C12": {x: 22245, y: 2867},
+    "Phone R4C15": {x: 27813, y: 4003},
+    "Phone R5C6": {x: 10686, y: 5042},
+    "Phone R8C2": {x: 3152, y: 8511},
+    "Phone R8C10": {x: 17407, y: 8458},
+    "Phone R10C7": {x: 12601, y: 10521},
+    "Phone R10C13": {x: 24596, y: 10537},
+    "Phone R11C3": {x: 4788, y: 11652},
+    "Phone R11C10": {x: 18882, y: 11698},
+    "Phone R13C6": {x: 11268, y: 13283},
+    "Phone R13C16": {x: 30022, y: 13628},
+    "Phone R15C3": {x: 4583, y: 16077},
+    "Phone R15C11": {x: 20190, y: 15776},
+    "Phone R16C7": {x: 12744, y: 17161},
+    "Phone R16C15": {x: 28638, y: 16526},
+
 };
 const items = {
     "Pencil": { icon: "assets/icons/Pencil.png" },
@@ -382,6 +402,7 @@ const items = {
     "Illusion Bunny": {icon: "assets/icons/Bunny.png"},
     "Community Bunny": {icon: "assets/icons/Bunny.png"},
     "Face Bunny": {icon: "assets/icons/Bunny.png"},
+    "Phone": {icon: "assets/icons/Phone.png"},
 };
 
 const bunnyMarkers = L.layerGroup();
@@ -397,11 +418,20 @@ const layerGroups = {
         group: L.layerGroup(),
         itemLayers: {},
         items: [
-        "Key Ring", "Animal Flute", "Lantern", "Top",
+        "Matchbox", "Animal Flute", "Lantern", "Top",
         "Disc", "Mock Disc",
         "B. Wand", "B.B. Wand", "Yoyo", "Slink",  
         "Remote", "B. Ball", "Wheel", "UV Lantern", 
-         "Matchbox",
+         
+        ],
+        default: true
+    },
+    keys: {
+        group: L.layerGroup(),
+        itemLayers: {},
+        items: [
+        "Key", "Key Ring", "House Key", "Office Key", "E. Medal",
+        "S. Medal", "K. Shard", 
         ],
         default: true
     },
@@ -417,8 +447,8 @@ const layerGroups = {
         group: L.layerGroup(),
         itemLayers: {},
         items: [
-        "Candle",  "Match", "Pencil", "Stamp", "Map", "Key",  
-        "House Key", "Office Key", "Fanny Pack", "Firecracker Refill"
+        "Candle",  "Match", "Pencil", "Stamp", "Map",  
+        "Fanny Pack", "Firecracker Refill"
         ],
         default: false
     },
@@ -465,6 +495,14 @@ const layerGroups = {
         ],
         default: false
     },
+    phones: {
+        group: L.layerGroup(),
+        itemLayers: {},
+        items: [
+            "Phone",
+        ],
+        default: false
+    }
 };
 
 const itemToGroupMap = {};
@@ -480,10 +518,11 @@ Object.values(layerGroups).forEach(group => {
 });
 
 const debug = false;
-const MAP_WIDTH = 30720;
-const MAP_HEIGHT = 17280;
-const CHUNK_WIDTH = 960;
-const CHUNK_HEIGHT = 540;
+const COMPRESSION_LEVEL = 3;
+const MAP_WIDTH = 30720/COMPRESSION_LEVEL;
+const MAP_HEIGHT = 17280/COMPRESSION_LEVEL;
+const CHUNK_WIDTH = 1920/COMPRESSION_LEVEL;
+const CHUNK_HEIGHT = 1080/COMPRESSION_LEVEL;
 
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebarToggle');
@@ -491,7 +530,7 @@ const mapElement = document.getElementById('map');
 
 const map = L.map('map', {
     crs: L.CRS.Simple,
-    minZoom: -5,
+    minZoom: -4,
     maxZoom: 2,
     zoomSnap: 0.02,
     preferCanvas: true,
@@ -522,7 +561,7 @@ for (let row = 0; row < rows; row++) {
             map.unproject([x + CHUNK_WIDTH, y], 0)
         );
         
-        L.imageOverlay(`map_chunks/chunk_${row}_${col}.png`, chunkBounds, {
+        L.imageOverlay(`map_chunks_2x2/chunk_${row}_${col}.png`, chunkBounds, {
             interactive: false
         }).addTo(map);
     }
@@ -550,7 +589,7 @@ coordDisplay.onAdd = function(map) {
 
 coordDisplay.update = function(coords) {
     this._div.innerHTML = coords ? 
-        `Row: ${Math.trunc(coords.y/(1080))}, Column: ${Math.trunc(coords.x/(1920))}` : 
+        `Row: ${Math.trunc(coords.y/(1080/COMPRESSION_LEVEL))+1}, Column: ${Math.trunc(coords.x/(1920/COMPRESSION_LEVEL))+1}` : 
         'Move mouse over map';
 };
 
@@ -559,7 +598,7 @@ coordDisplay.addTo(map);
 map.on('mousemove', function(e) {
     
     const point = map.project(e.latlng, 0);
-    if (point.x < 0 || point.x > MAP_WIDTH || point.y < 0 || point.y > MAP_HEIGHT) {
+    if (point.x < 0 || point.x/COMPRESSION_LEVEL > MAP_WIDTH || point.y < 0 || point.y/COMPRESSION_LEVEL > MAP_HEIGHT) {
         coordDisplay.update();
         return;
     }
@@ -609,11 +648,15 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
         let startMatch = null;
         if (locationName.startsWith("Disc Spike Bunny")) {
             startMatch = "Disc Spike Bunny";
-        } else {
+        } else if (locationName.startsWith("Phone")) {
+            startMatch = "Phone";
+        } else  {
             startMatch = Object.keys(items).find(item => 
                 locationName.toLowerCase().startsWith(item.toLowerCase())
             );
         }
+      
+
         if (startMatch) return startMatch;
     
         //some items are named in silly ways
@@ -641,7 +684,6 @@ Object.entries(locationsDB).forEach(([locationName, locationData]) => {
         generateMarker(locationName, locationData, foundItem, items[foundItem].icon);
         
         updateMarkerCounts();
-        if (debug) validateEggs();
     }
 }); 
 
@@ -691,7 +733,7 @@ function generateItemControls() {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'item-control';
             itemDiv.innerHTML = `
-                <label>
+                <label title ="${itemName}">
                     <input type="checkbox" id="${groupName}-${itemName.replace(/\W+/g, '-')}" 
                            class="item-toggle" ${group.default ? 'checked' : ''}
                            data-group="${groupName}" data-item="${itemName}">
@@ -890,7 +932,7 @@ function generateMarker(locationName, locationCoords, itemName, itemIcon) {
     const icon = createCenteredIcon(itemIcon, [32, 32]);
     
     const marker = L.marker(
-        map.unproject([locationCoords.x, locationCoords.y], 0),
+        map.unproject([Math.trunc(locationCoords.x/COMPRESSION_LEVEL), Math.trunc(locationCoords.y/COMPRESSION_LEVEL)], 0),
         { 
             icon: icon,
             riseOnHover: true
@@ -905,11 +947,11 @@ function generateMarker(locationName, locationCoords, itemName, itemIcon) {
 
 function markSpoilerLogLocations(parsedData, map, items) {
     clearAllMarkers();
-    const itemCounts = {};
+    const itemCounts = {"Phone": 19};
 
     Object.values(layerGroups).forEach(group => {
         group.items.forEach(item => {
-            itemCounts[item] = 0;
+            if (group.items[0] !== "Phone") itemCounts[item] = 0; //preserve phones!!!
         });
     });
     
@@ -929,26 +971,27 @@ function markSpoilerLogLocations(parsedData, map, items) {
         if (locationCoords && locationCoords.x && locationCoords.y) {
             generateMarker(locationName, locationCoords, itemName, locData.icon);
             
-            updateAllItemCounts(itemCounts);
-            updateMarkerCounts();
-            if (debug) validateEggs();
+            
         } else {
             console.warn(`No coordinates found for location: ${locationName}`);
         }
 
     });
+    updateAllItemCounts(itemCounts);
+    updateMarkerCounts();
 }
 
 function updateAllItemCounts(itemCounts) {
     document.querySelectorAll('.item-control').forEach(itemControl => {
         const itemName = itemControl.querySelector('input').dataset.item;
         const countElement = itemControl.querySelector('.item-count');
-        
         if (itemCounts[itemName] !== undefined) {
             countElement.textContent = itemCounts[itemName];
         } else {
             countElement.textContent = '0';
         }
+        console.log(itemName, itemCounts[itemName]);
+
     });
 }
 
@@ -968,6 +1011,7 @@ function updateMarkerCounts() {
 
 function clearAllMarkers() {
     Object.values(layerGroups).forEach(groupData => {
+        if (groupData.items[0] === "Phone") return; //keep phone markers, might expand upon later 
         groupData.group.clearLayers();
         Object.values(groupData.itemLayers).forEach(layer => {
             layer.clearLayers();
@@ -1012,8 +1056,8 @@ function setupSearch() {
                 li.className = 'search-result';
                 li.dataset.item = JSON.stringify({
                     name: locData.item,
-                    x: locData.coords.x,
-                    y: locData.coords.y
+                    x: Math.trunc(locData.coords.x/COMPRESSION_LEVEL),
+                    y: Math.trunc(locData.coords.y/COMPRESSION_LEVEL)
                 });
 
                 li.innerHTML = `
@@ -1113,22 +1157,21 @@ document.addEventListener('DOMContentLoaded', function() {
     setupSpoilerLogParser(locationsDB, items);
     setupSearch();
 });
-
-function validateEggs(){
-    let eggs = [...layerGroups.eggs.items];
-    console.log(eggs);
-    for (const [locationName, locData] of Object.entries(itemLocationMap)) {
-            const item = locData.item;
-            if (eggs.includes(item)) {
-                const index = eggs.indexOf(item);
-                if (index > -1) { 
-                    eggs.splice(index, 1); 
-                }
-            }else if (layerGroups.eggs.items.includes(item)) {
-                eggs.push(item);
-            } else {
-                console.log(`Item ${item} not found in eggs`);
-            }
+if (debug) {
+    map.on('click', function(e)   {
+        const point = map.project(e.latlng, 0);
+        if (point.x < 0 || point.x > MAP_WIDTH || point.y < 0 || point.y > MAP_HEIGHT) {
+            coordDisplay.update();
+            return;
         }
-    console.log(eggs);
+        const coords = {
+            x: Math.round(point.x),
+            y: Math.round(point.y) 
+        };
+        const row = Math.trunc(coords.y/(1080))+1;
+        const column = Math.trunc(coords.x/(1920))+1;
+        // Row: ${Math.trunc(coords.y/(1080))+1}, Column: ${Math.trunc(coords.x/(1920))+1}
+        const s = `\"Phone R${row}C${column}\": {x: ${coords.x}, y: ${coords.y}},`;
+        navigator.clipboard.writeText(s);
+    });
 }
