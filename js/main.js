@@ -518,10 +518,11 @@ Object.values(layerGroups).forEach(group => {
 });
 
 const debug = false;
-const MAP_WIDTH = 30720;
-const MAP_HEIGHT = 17280;
-const CHUNK_WIDTH = 960;
-const CHUNK_HEIGHT = 540;
+const COMPRESSION_LEVEL = 3;
+const MAP_WIDTH = 30720/COMPRESSION_LEVEL;
+const MAP_HEIGHT = 17280/COMPRESSION_LEVEL;
+const CHUNK_WIDTH = 1920/COMPRESSION_LEVEL;
+const CHUNK_HEIGHT = 1080/COMPRESSION_LEVEL;
 
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebarToggle');
@@ -529,7 +530,7 @@ const mapElement = document.getElementById('map');
 
 const map = L.map('map', {
     crs: L.CRS.Simple,
-    minZoom: -5,
+    minZoom: -4,
     maxZoom: 2,
     zoomSnap: 0.02,
     preferCanvas: true,
@@ -560,7 +561,7 @@ for (let row = 0; row < rows; row++) {
             map.unproject([x + CHUNK_WIDTH, y], 0)
         );
         
-        L.imageOverlay(`map_chunks/chunk_${row}_${col}.png`, chunkBounds, {
+        L.imageOverlay(`map_chunks_2x2/chunk_${row}_${col}.png`, chunkBounds, {
             interactive: false
         }).addTo(map);
     }
@@ -588,7 +589,7 @@ coordDisplay.onAdd = function(map) {
 
 coordDisplay.update = function(coords) {
     this._div.innerHTML = coords ? 
-        `Row: ${Math.trunc(coords.y/(1080))+1}, Column: ${Math.trunc(coords.x/(1920))+1}` : 
+        `Row: ${Math.trunc(coords.y/(1080/COMPRESSION_LEVEL))+1}, Column: ${Math.trunc(coords.x/(1920/COMPRESSION_LEVEL))+1}` : 
         'Move mouse over map';
 };
 
@@ -597,7 +598,7 @@ coordDisplay.addTo(map);
 map.on('mousemove', function(e) {
     
     const point = map.project(e.latlng, 0);
-    if (point.x < 0 || point.x > MAP_WIDTH || point.y < 0 || point.y > MAP_HEIGHT) {
+    if (point.x < 0 || point.x/COMPRESSION_LEVEL > MAP_WIDTH || point.y < 0 || point.y/COMPRESSION_LEVEL > MAP_HEIGHT) {
         coordDisplay.update();
         return;
     }
@@ -931,7 +932,7 @@ function generateMarker(locationName, locationCoords, itemName, itemIcon) {
     const icon = createCenteredIcon(itemIcon, [32, 32]);
     
     const marker = L.marker(
-        map.unproject([locationCoords.x, locationCoords.y], 0),
+        map.unproject([Math.trunc(locationCoords.x/COMPRESSION_LEVEL), Math.trunc(locationCoords.y/COMPRESSION_LEVEL)], 0),
         { 
             icon: icon,
             riseOnHover: true
@@ -1055,8 +1056,8 @@ function setupSearch() {
                 li.className = 'search-result';
                 li.dataset.item = JSON.stringify({
                     name: locData.item,
-                    x: locData.coords.x,
-                    y: locData.coords.y
+                    x: Math.trunc(locData.coords.x/COMPRESSION_LEVEL),
+                    y: Math.trunc(locData.coords.y/COMPRESSION_LEVEL)
                 });
 
                 li.innerHTML = `
