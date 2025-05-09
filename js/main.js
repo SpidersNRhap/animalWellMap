@@ -589,7 +589,7 @@ coordDisplay.onAdd = function(map) {
 
 coordDisplay.update = function(coords) {
     this._div.innerHTML = coords ? 
-        `Row: ${Math.trunc(coords.y/(1080/COMPRESSION_LEVEL))+1}, Column: ${Math.trunc(coords.x/(1920/COMPRESSION_LEVEL))+1}` : 
+        `Row: ${Math.trunc(coords.y/(CHUNK_HEIGHT))+1}, Column: ${Math.trunc(coords.x/(CHUNK_WIDTH))+1}` : 
         'Move mouse over map';
 };
 
@@ -598,7 +598,7 @@ coordDisplay.addTo(map);
 map.on('mousemove', function(e) {
     
     const point = map.project(e.latlng, 0);
-    if (point.x < 0 || point.x/COMPRESSION_LEVEL > MAP_WIDTH || point.y < 0 || point.y/COMPRESSION_LEVEL > MAP_HEIGHT) {
+    if (point.x < 0 || point.x > MAP_WIDTH || point.y < 0 || point.y > MAP_HEIGHT) {
         coordDisplay.update();
         return;
     }
