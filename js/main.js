@@ -1082,7 +1082,7 @@ function setupSearch() {
             searchBox.value = name;
             resultsList.style.display = 'none';
             const latlng = map.unproject([x, y], 0);
-            map.flyTo(latlng, -2);
+            map.flyTo(latlng, 0);
            
             let locationData = null;
             let foundLocation = null;
