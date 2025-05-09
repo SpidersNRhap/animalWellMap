@@ -550,7 +550,7 @@ coordDisplay.onAdd = function(map) {
 
 coordDisplay.update = function(coords) {
     this._div.innerHTML = coords ? 
-        `Row: ${Math.trunc(coords.y/(1080))}, Column: ${Math.trunc(coords.x/(1920))}` : 
+        `Row: ${Math.trunc(coords.y/(1080))+1}, Column: ${Math.trunc(coords.x/(1920))+1}` : 
         'Move mouse over map';
 };
 
